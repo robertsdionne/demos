@@ -1,0 +1,46 @@
+<!-- Copyright 2010 Robert Scott Dionne. All Rights Reserved. -->
+<html>
+  <head>
+    <script src="../closure-library/closure/goog/base.js" type="application/javascript"></script>
+    <script src="deps.js" type="application/javascript"></script>
+    <script type="application/javascript">
+      goog.require('astoroids');
+    </script>
+    <script id="v" type="x-shader/x-vertex">
+      uniform float size;
+      uniform bool wrap;
+      uniform vec3 xyChi;
+      uniform vec3 abRho;
+      attribute vec2 position;
+
+      float pi = 3.141592653589793;
+
+      void main() {
+        float chi = 2.0 * pi * xyChi.z;
+        mat2 r = mat2(1.0);
+        r[0][0] = cos(chi);
+        r[1][0] = -sin(chi);
+        r[0][1] = sin(chi);
+        r[1][1] = cos(chi);
+        vec2 xy = r * position.xy + xyChi.xy;
+        if (wrap) {
+          xy.x = fract(-xy.x + 1.0) * 2.0 - 1.0;
+          xy.y = fract(xy.y) * 2.0 - 1.0;
+        } else {
+          xy.x = (-xy.x + 1.0) * 2.0 - 1.0;
+          xy.y = (xy.y) * 2.0 - 1.0;
+        }
+        gl_Position = vec4(xy, 0.0, 1.0);
+        gl_PointSize = size;
+      }
+    </script>
+    <script id="f" type="x-shader/x-fragment">
+      void main() {
+        gl_FragColor = vec4(1);
+      }
+    </script>
+  </head>
+  <body onload="astoroids.load();">
+    <canvas id="c"></canvas>
+  </body>
+</html>
