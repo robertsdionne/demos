@@ -1,46 +1,58 @@
 <!-- Copyright 2010 Robert Scott Dionne. All Rights Reserved. -->
 <html>
   <head>
-    <script src="../closure-library/closure/goog/base.js" type="application/javascript"></script>
+    <script src="../closure-library/closure/goog/base.js"
+        type="application/javascript"></script>
     <script src="deps.js" type="application/javascript"></script>
     <script type="application/javascript">
-      goog.require('astoroids');
+      goog.require('ray');
     </script>
     <script id="v" type="x-shader/x-vertex">
-      uniform float size;
-      uniform bool wrap;
-      uniform vec3 xyChi;
-      uniform vec3 abRho;
-      attribute vec2 position;
-
-      float pi = 3.141592653589793;
-
+      attribute vec3 position;
       void main() {
-        float chi = 2.0 * pi * xyChi.z;
-        mat2 r = mat2(1.0);
-        r[0][0] = cos(chi);
-        r[1][0] = -sin(chi);
-        r[0][1] = sin(chi);
-        r[1][1] = cos(chi);
-        vec2 xy = r * position.xy + xyChi.xy;
-        if (wrap) {
-          xy.x = fract(-xy.x + 1.0) * 2.0 - 1.0;
-          xy.y = fract(xy.y) * 2.0 - 1.0;
-        } else {
-          xy.x = (-xy.x + 1.0) * 2.0 - 1.0;
-          xy.y = (xy.y) * 2.0 - 1.0;
-        }
-        gl_Position = vec4(xy, 0.0, 1.0);
-        gl_PointSize = size;
+        gl_Position = vec4(position, 1);
       }
     </script>
     <script id="f" type="x-shader/x-fragment">
+      uniform highp vec2 resolution;
+      uniform highp vec3 sphere;
       void main() {
-        gl_FragColor = vec4(1);
+        highp vec3 dir = vec3(
+            (gl_FragCoord.x / resolution.x - 0.5) * 2.0,
+            (gl_FragCoord.y / resolution.y - 0.5) * 2.0,
+            2.0);
+        highp float r = 0.4;
+        highp float r2 = r * r;
+        highp float dist = dot(sphere, sphere);
+        if (dist < r2) {
+          gl_FragColor = vec4(0, 1, 0, 1);
+        } else {
+          highp float cv = dot(sphere, dir);
+          highp float dir2 = dot(dir, dir);
+          highp float disc = cv * cv - dir2 * (dist - r2);
+          if (disc < 0.0) {
+            gl_FragColor = vec4(0, 0, 0, 1);
+          } else {
+            highp float t = (cv - disc) / dir2;
+            highp vec3 pos = dir * t;
+            highp vec3 normal = normalize(pos - sphere);
+            highp vec3 light = normalize(pos - vec3(0, 0, 5));
+            highp float spec =
+                pow(-dot(normalize(dir), reflect(light, normal)), 25.0);
+            highp float intensity = -dot(light, normal);
+            highp vec3 signs = sign(normal);
+            highp float modulus = signs.x * signs.y * signs.z;
+            if (modulus > 0.0) {
+              gl_FragColor = vec4(intensity + spec, spec, spec, 1);
+            } else {
+              gl_FragColor = vec4(spec, spec, intensity + spec, 1);
+            }
+          }
+        }
       }
     </script>
   </head>
-  <body onload="astoroids.load();">
+  <body onload="ray.load();">
     <canvas id="c"></canvas>
   </body>
 </html>
