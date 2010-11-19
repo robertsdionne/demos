@@ -16,43 +16,77 @@
     <script id="f" type="x-shader/x-fragment">
       uniform highp vec2 resolution;
       uniform highp vec3 sphere;
+
+      highp float distance(highp vec3 pos);
+      highp vec3 rotate(highp vec3 pos, highp float a);
+
+      highp float r = 1.32;
+      highp float R = 3.44;
       void main() {
-        highp vec3 dir = vec3(
+        highp vec3 pos = vec3(0.0);
+        highp vec3 dir = normalize(vec3(
             (gl_FragCoord.x / resolution.x - 0.5) * 2.0,
             (gl_FragCoord.y / resolution.y - 0.5) * 2.0,
-            2.0);
-        highp float r = 0.4;
-        highp float r2 = r * r;
-        highp float dist = dot(sphere, sphere);
-        if (dist < r2) {
-          gl_FragColor = vec4(0, 1, 0, 1);
-        } else {
-          highp float cv = dot(sphere, dir);
-          highp float dir2 = dot(dir, dir);
-          highp float disc = cv * cv - dir2 * (dist - r2);
-          if (disc < 0.0) {
-            gl_FragColor = vec4(0, 0, 0, 1);
-          } else {
-            highp float t = (cv - disc) / dir2;
-            highp vec3 pos = dir * t;
-            highp vec3 normal = normalize(pos - sphere);
-            highp vec3 light = normalize(pos - vec3(0, 0, 5));
-            highp float spec =
-                pow(-dot(normalize(dir), reflect(light, normal)), 25.0);
-            highp float intensity = -dot(light, normal);
-            highp vec3 signs = sign(normal);
-            highp float modulus = signs.x * signs.y * signs.z;
-            if (modulus > 0.0) {
-              gl_FragColor = vec4(intensity + spec, spec, spec, 1);
-            } else {
-              gl_FragColor = vec4(spec, spec, intensity + spec, 1);
-            }
+            2.0));
+        bool hit = false;
+        highp vec3 p;
+        for (int i = 0; i < 1000; ++i) {
+          p = rotate(pos-sphere, (pos-sphere).y*3.14159/4.0);
+          highp float dist = distance(p);
+          if (length(pos) > 100.0) {
+            break;
           }
+          if (dist < 0.01) {
+            hit = true;
+            break;
+          }
+          pos += 0.5 * dir * dist;
         }
+        if (hit) {
+          highp vec3 dx = vec3(0.01, 0.0,  0.0);
+          highp vec3 dy = vec3(0.0,  0.01, 0.0);
+          highp vec3 dz = vec3(0.0,  0.0,  0.01);
+          highp vec3 pdx = rotate(pos-sphere+dx, (pos-sphere+dx).y*3.14159/4.0);
+          highp vec3 pdy = rotate(pos-sphere+dy, (pos-sphere+dy).y*3.14159/4.0);
+          highp vec3 pdz = rotate(pos-sphere+dz, (pos-sphere+dz).y*3.14159/4.0);
+          highp vec3 npdx = rotate(pos-sphere-dx, (pos-sphere-dx).y*3.14159/4.0);
+          highp vec3 npdy = rotate(pos-sphere-dy, (pos-sphere-dy).y*3.14159/4.0);
+          highp vec3 npdz = rotate(pos-sphere-dz, (pos-sphere-dz).y*3.14159/4.0);
+          highp vec3 normal = normalize(vec3(
+            distance(pdx) - distance(npdx),
+            distance(pdy) - distance(npdy),
+            distance(pdz) - distance(npdz)));
+          highp vec3 lightdir = normalize(pos - vec3(0, 0, 10));
+          highp float intensity = -dot(lightdir, normal);
+          highp float spec =
+              pow(clamp(-dot(normalize(dir), reflect(lightdir, normal)), 0.0, 1.0), 80.0);
+          if (intensity < 0.0) {
+            gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+          }
+          gl_FragColor = vec4(intensity + spec, intensity + spec, intensity + spec, 1.0);
+        } else {
+          gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+      }
+
+      highp float distance(highp vec3 pos) {
+        highp vec3 di = abs(pos) - vec3(1.00, 4.0, 1.00);
+        return min(max(max(di.x, di.y), di.z), length(max(di, 0.0)));
+//      return length(vec2(length(pos.xy)-R,pos.z))-r;
+      }
+
+      highp vec3 rotate(highp vec3 pos, highp float a) {
+        highp mat3 r = mat3(1);
+        r[0][0] = cos(a);
+        r[2][0] = sin(a);
+        r[0][2] = -sin(a);
+        r[2][2] = cos(a);
+        return r * pos;
       }
     </script>
   </head>
   <body onload="ray.load();">
     <canvas id="c"></canvas>
+    <div id="fps"></div>
   </body>
 </html>

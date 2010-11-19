@@ -11,6 +11,7 @@ var keys = new ray.Keys();
 
 ray.load = function() {
   var canvas = document.getElementById('c');
+  var fps = document.getElementById('fps');
   keys.install(window);
   canvas.width = 640;
   canvas.height = 640;
@@ -19,19 +20,23 @@ ray.load = function() {
   var b = gl.createBuffer();
   onCreate(gl, p, b);
   var width, height;
+  var lastTick = Date.now();
   window.setInterval(function() {
     if (width !== canvas.width || height !== canvas.height) {
       width = canvas.width;
       height = canvas.height;
       onChange(gl, width, height);
     }
+    var currentTick = Date.now();
+    fps.innerHTML = '' + Math.floor(1000 / (currentTick - lastTick));
+    lastTick = currentTick;
     update();
     onDraw(gl, p, b);
   }, 10);
 };
 
 
-var X = 0;
+var X = -2;
 var Y = 0;
 var Z = 10;
 
@@ -50,10 +55,10 @@ var update = function() {
     X += 0.1;
   }
   if (keys.isDown(65)) {
-    Z += 0.1;
+    Z += 0.2;
   }
   if (keys.isDown(90)) {
-    Z -= 0.1;
+    Z -= 0.2;
   }
 };
 
