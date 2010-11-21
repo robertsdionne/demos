@@ -63,7 +63,7 @@ var update = function() {
 };
 
 var onCreate = function(gl, p, b) {
-  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+  gl.clearColor(0.2, 0.2, 0.2, 1.0);
   var v = gl.createShader(gl.VERTEX_SHADER);
   gl.shaderSource(v, document.getElementById('v').text);
   var result = gl.compileShader(v);

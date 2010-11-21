@@ -31,12 +31,12 @@
         bool hit = false;
         highp vec3 p;
         for (int i = 0; i < 1000; ++i) {
-          p = rotate(pos-sphere, (pos-sphere).y*3.14159/4.0);
+          p = pos-sphere;
           highp float dist = distance(p);
           if (length(pos) > 100.0) {
             break;
           }
-          if (dist < 0.01) {
+          if (dist < max(0.001 * pos.z, 0.001)) {
             hit = true;
             break;
           }
@@ -46,33 +46,37 @@
           highp vec3 dx = vec3(0.01, 0.0,  0.0);
           highp vec3 dy = vec3(0.0,  0.01, 0.0);
           highp vec3 dz = vec3(0.0,  0.0,  0.01);
-          highp vec3 pdx = rotate(pos-sphere+dx, (pos-sphere+dx).y*3.14159/4.0);
-          highp vec3 pdy = rotate(pos-sphere+dy, (pos-sphere+dy).y*3.14159/4.0);
-          highp vec3 pdz = rotate(pos-sphere+dz, (pos-sphere+dz).y*3.14159/4.0);
-          highp vec3 npdx = rotate(pos-sphere-dx, (pos-sphere-dx).y*3.14159/4.0);
-          highp vec3 npdy = rotate(pos-sphere-dy, (pos-sphere-dy).y*3.14159/4.0);
-          highp vec3 npdz = rotate(pos-sphere-dz, (pos-sphere-dz).y*3.14159/4.0);
+          highp vec3 pdx = p+dx;
+          highp vec3 pdy = p+dy;
+          highp vec3 pdz = p+dz;
+          highp vec3 npdx = p-dx;
+          highp vec3 npdy = p-dy;
+          highp vec3 npdz = p-dz;
           highp vec3 normal = normalize(vec3(
             distance(pdx) - distance(npdx),
             distance(pdy) - distance(npdy),
             distance(pdz) - distance(npdz)));
-          highp vec3 lightdir = normalize(pos - vec3(0, 0, 10));
-          highp float intensity = -dot(lightdir, normal);
+          highp vec3 lightdir = pos - vec3(4, -4, 10);
+          highp vec3 nlightdir = normalize(lightdir);
+          highp vec3 lightdir2 = pos - vec3(4, 4, 10);
+          highp vec3 nlightdir2 = normalize(lightdir2);
+          highp float intensity = clamp(-dot(nlightdir, normal)/length(lightdir), 0.0, 1.0);
+          highp float intensity2 = clamp(-dot(nlightdir2, normal)/length(lightdir2), 0.0, 1.0);
           highp float spec =
-              pow(clamp(-dot(normalize(dir), reflect(lightdir, normal)), 0.0, 1.0), 80.0);
-          if (intensity < 0.0) {
-            gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-          }
-          gl_FragColor = vec4(intensity + spec, intensity + spec, intensity + spec, 1.0);
+              pow(clamp(-dot(normalize(dir), reflect(nlightdir, normal)), 0.0, 1.0), 80.0);
+          highp float spec2 =
+              pow(clamp(-dot(normalize(dir), reflect(nlightdir2, normal)), 0.0, 1.0), 80.0);
+          gl_FragColor = vec4(intensity +intensity2+ spec+spec2, intensity +intensity2+ spec+spec2, intensity +intensity2+ spec+spec2, 1.0);
         } else {
-          gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+          discard;
         }
       }
 
       highp float distance(highp vec3 pos) {
-        highp vec3 di = abs(pos) - vec3(1.00, 4.0, 1.00);
-        return min(max(max(di.x, di.y), di.z), length(max(di, 0.0)));
-//      return length(vec2(length(pos.xy)-R,pos.z))-r;
+        highp float distTop = dot(pos, vec3(0.0, 1.0, 0.0))-2.0;
+        highp float distBottom = dot(pos, vec3(0.0, -1.0, 0.0))-2.0;
+        highp float distCyl = length(pos.xz)-1.0;
+        return max(max(distTop, distBottom), distCyl);
       }
 
       highp vec3 rotate(highp vec3 pos, highp float a) {
