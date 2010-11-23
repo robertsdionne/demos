@@ -8,79 +8,112 @@
       goog.require('ray');
     </script>
     <script id="v" type="x-shader/x-vertex">
+      uniform vec3 translate;
       attribute vec3 position;
+      varying vec3 ray;
       void main() {
-        gl_Position = vec4(position, 1);
+        mat4 t = mat4(1.0);
+        t[3][0] = translate.x;
+        t[3][1] = translate.y;
+        t[3][2] = translate.z;
+        mat4 p = mat4(1.0);
+        p[3][3] = 0.0;
+        p[2][3] = -1.0/1.0;
+        vec4 d = t * vec4(position, 1);
+        ray = d.xyz;
+        gl_Position = p * d;
       }
     </script>
     <script id="f" type="x-shader/x-fragment">
-      uniform highp vec2 resolution;
-      uniform highp vec3 sphere;
+      uniform lowp vec3 translate;
+      varying lowp vec3 ray;
 
-      highp float distance(highp vec3 pos);
-      highp vec3 rotate(highp vec3 pos, highp float a);
+      lowp float distance(lowp vec3 pos);
+      lowp vec3 rotate(lowp vec3 pos, lowp float a);
 
-      highp float r = 1.32;
-      highp float R = 3.44;
+      lowp float r = 0.32;
+      lowp float R = 0.5;
       void main() {
-        highp vec3 pos = vec3(0.0);
-        highp vec3 dir = normalize(vec3(
-            (gl_FragCoord.x / resolution.x - 0.5) * 2.0,
-            (gl_FragCoord.y / resolution.y - 0.5) * 2.0,
-            2.0));
+        lowp vec3 pos = ray;
+        lowp vec3 dir = normalize(ray);
         bool hit = false;
-        highp vec3 p;
+        lowp vec3 p;
         for (int i = 0; i < 1000; ++i) {
-          p = pos-sphere;
-          highp float dist = distance(p);
+          p = pos-translate;
+          lowp float dist = distance(p);
           if (length(pos) > 100.0) {
             break;
           }
-          if (dist < max(0.001 * pos.z, 0.001)) {
+          if (dist < max(0.01 * pos.z, 0.001)) {
             hit = true;
             break;
           }
           pos += 0.5 * dir * dist;
         }
         if (hit) {
-          highp vec3 dx = vec3(0.01, 0.0,  0.0);
-          highp vec3 dy = vec3(0.0,  0.01, 0.0);
-          highp vec3 dz = vec3(0.0,  0.0,  0.01);
-          highp vec3 pdx = p+dx;
-          highp vec3 pdy = p+dy;
-          highp vec3 pdz = p+dz;
-          highp vec3 npdx = p-dx;
-          highp vec3 npdy = p-dy;
-          highp vec3 npdz = p-dz;
-          highp vec3 normal = normalize(vec3(
-            distance(pdx) - distance(npdx),
-            distance(pdy) - distance(npdy),
-            distance(pdz) - distance(npdz)));
-          highp vec3 lightdir = pos - vec3(4, -4, 10);
-          highp vec3 nlightdir = normalize(lightdir);
-          highp vec3 lightdir2 = pos - vec3(4, 4, 10);
-          highp vec3 nlightdir2 = normalize(lightdir2);
-          highp float intensity = clamp(-dot(nlightdir, normal)/length(lightdir), 0.0, 1.0);
-          highp float intensity2 = clamp(-dot(nlightdir2, normal)/length(lightdir2), 0.0, 1.0);
-          highp float spec =
-              pow(clamp(-dot(normalize(dir), reflect(nlightdir, normal)), 0.0, 1.0), 80.0);
-          highp float spec2 =
-              pow(clamp(-dot(normalize(dir), reflect(nlightdir2, normal)), 0.0, 1.0), 80.0);
-          gl_FragColor = vec4(intensity +intensity2+ spec+spec2, intensity +intensity2+ spec+spec2, intensity +intensity2+ spec+spec2, 1.0);
+          lowp vec3 dx = vec3(0.01, 0.0,  0.0);
+          lowp vec3 dy = vec3(0.0,  0.01, 0.0);
+          lowp vec3 dz = vec3(0.0,  0.0,  0.01);
+          lowp vec3 normal = normalize(vec3(
+            distance(p+dx) - distance(p-dx),
+            distance(p+dy) - distance(p-dy),
+            distance(p+dz) - distance(p-dz)));
+          lowp vec3 lightdir = pos - vec3(0, 0, -5);
+          lowp vec3 nlightdir = normalize(lightdir);
+          lowp vec3 lightdir2 = pos - vec3(4, 0, -5);
+          lowp vec3 nlightdir2 = normalize(lightdir2);
+          lowp vec3 lightdir3 = pos - vec3(-4, 0, -5);
+          lowp vec3 nlightdir3 = normalize(lightdir3);
+          lowp float intensity = clamp(-dot(nlightdir, normal), 0.0, 1.0);
+          lowp float intensity2 = clamp(-dot(nlightdir2, normal)/length(lightdir2), 0.0, 1.0);
+          lowp float intensity3 = clamp(-dot(nlightdir3, normal)/length(lightdir3), 0.0, 1.0);
+          lowp float spec =pow(clamp(-dot(normalize(dir), reflect(nlightdir, normal)), 0.0, 1.0), 80.0);
+          lowp float spec2 =pow(clamp(-dot(normalize(dir), reflect(nlightdir2, normal)), 0.0, 1.0), 80.0);
+          lowp float spec3 =pow(clamp(-dot(normalize(dir), reflect(nlightdir3, normal)), 0.0, 1.0), 80.0);
+          gl_FragColor = vec4(intensity +intensity3+ spec+spec3, intensity +spec, intensity +intensity2+ spec+spec2, 1.0);
         } else {
           discard;
         }
       }
 
-      highp float distance(highp vec3 pos) {
-        highp float distTop = dot(pos, vec3(0.0, 1.0, 0.0))-2.0;
-        highp float distBottom = dot(pos, vec3(0.0, -1.0, 0.0))-2.0;
-        highp float distCyl = length(pos.xz)-1.0;
+      lowp float torus(lowp vec3 pos);
+      lowp float column(lowp vec3 pos);
+      lowp float slice(lowp vec3 pos);
+      lowp float leaf(lowp vec3 pos);
+
+      lowp float distance(lowp vec3 pos) {
+        return torus(pos);
+      }
+
+      lowp float torus(lowp vec3 pos) {
+        return length(vec2(length(pos.xz)-R,pos.y))-r;
+      }
+
+      lowp float slice(lowp vec3 pos) {
+        return 0.0;
+      }
+
+      lowp float column(lowp vec3 pos) {
+        lowp float distTop = dot(pos, vec3(0.0, 1.0, 0.0))-1.0;
+        lowp float distBottom = dot(pos, vec3(0.0, -1.0, 0.0))-1.0;
+        lowp float theta = atan(pos.z, pos.x);
+        lowp float distCyl = length(pos.xz)-0.25;
+        distCyl -= 1.0/16.0-(pos.y/8.0)*(pos.y/8.0);
+        //distCyl += 0.01*sin(theta*32.0);
+        lowp float a = ((mod(32.0*theta/3.14159+0.5,1.0))-0.5);
+        distCyl -= 0.01*a*a;
         return max(max(distTop, distBottom), distCyl);
       }
 
-      highp vec3 rotate(highp vec3 pos, highp float a) {
-        highp mat3 r = mat3(1);
+      lowp float leaf(lowp vec3 pos) {
+        lowp vec3 p = pos;
+        p.z += sin(p.y / 8.0);
+        return max(max(dot(p, vec3(0.0, 0.0, 1.0))+4.0, length(p.xy*vec2(1.0,1.5))-1.0),
+            dot(p, vec3(0.0, 0.0, -1.0))-4.01);
+      }
+
+      lowp vec3 rotate(lowp vec3 pos, lowp float a) {
+        lowp mat3 r = mat3(1);
         r[0][0] = cos(a);
         r[2][0] = sin(a);
         r[0][2] = -sin(a);
