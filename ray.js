@@ -38,7 +38,7 @@ ray.load = function() {
 
 var X = -2;
 var Y = 0;
-var Z = 10;
+var Z = -5;
 
 
 var update = function() {
