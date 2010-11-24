@@ -17,8 +17,10 @@
         t[3][1] = translate.y;
         t[3][2] = translate.z;
         mat4 p = mat4(1.0);
+        p[2][2] = -1001.0 / 999.0;
+        p[2][3] = -1.0;
+        p[3][2] = -2000.0 / 999.0;
         p[3][3] = 0.0;
-        p[2][3] = -1.0/1.0;
         vec4 d = t * vec4(position, 1);
         ray = d.xyz;
         gl_Position = p * d;
@@ -36,6 +38,7 @@
       void main() {
         lowp vec3 pos = ray;
         lowp vec3 dir = normalize(ray);
+        lowp float eps = 1.001 - dot(dir, vec3(0.0, 0.0, -1.0));
         bool hit = false;
         lowp vec3 p;
         for (int i = 0; i < 1000; ++i) {
@@ -44,7 +47,7 @@
           if (length(pos) > 100.0) {
             break;
           }
-          if (dist < max(0.01 * pos.z, 0.001)) {
+          if (dist < max(0.01 * pos.z, eps/2.0)) {
             hit = true;
             break;
           }
@@ -80,9 +83,21 @@
       lowp float column(lowp vec3 pos);
       lowp float slice(lowp vec3 pos);
       lowp float leaf(lowp vec3 pos);
+      lowp float sphere(lowp vec3 pos);
+      lowp float cube(lowp vec3 pos);
 
       lowp float distance(lowp vec3 pos) {
-        return torus(pos);
+        return cube(pos);
+      }
+
+      lowp float cube(lowp vec3 pos) {
+        lowp vec3 dist = abs(rotate(pos, pos.y)) - vec3(0.5);
+        return min(max(max(dist.x, dist.y), dist.z),
+            length(max(dist, 0.0)));
+      }
+
+      lowp float sphere(lowp vec3 pos) {
+        return length(pos)-0.5;
       }
 
       lowp float torus(lowp vec3 pos) {

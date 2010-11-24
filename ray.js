@@ -143,11 +143,20 @@ var onChange = function(gl, width, height) {
 
 var onDraw = function(gl, p, b) {
   gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
+
   gl.uniform3fv(p.translate, new Float32Array([X, Y, Z]));
   gl.bindBuffer(gl.ARRAY_BUFFER, b);
   gl.vertexAttribPointer(p.position, 3, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(p.position);
   gl.drawArrays(gl.TRIANGLES, 0, 36);
   gl.disableVertexAttribArray(p.position);
+
+  gl.uniform3fv(p.translate, new Float32Array([X+2, Y, Z]));
+  gl.bindBuffer(gl.ARRAY_BUFFER, b);
+  gl.vertexAttribPointer(p.position, 3, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(p.position);
+  gl.drawArrays(gl.TRIANGLES, 0, 36);
+  gl.disableVertexAttribArray(p.position);
+
   gl.flush();
 };
