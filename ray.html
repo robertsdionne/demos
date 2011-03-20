@@ -21,7 +21,7 @@
         p[2][3] = -1.0;
         p[3][2] = -2000.0 / 999.0;
         p[3][3] = 0.0;
-        vec4 d = t * vec4(position, 1);
+        vec4 d = /*t */ vec4(position, 1);
         ray = d.xyz;
         gl_Position = p * d;
       }
@@ -32,17 +32,27 @@
 
       lowp float distance(lowp vec3 pos);
       lowp vec3 rotate(lowp vec3 pos, lowp float a);
+      lowp vec3 rotate(lowp vec3 pos, lowp float theta, lowp vec3 u);
 
       lowp float r = 0.32;
       lowp float R = 0.5;
       void main() {
         lowp vec3 pos = ray;
         lowp vec3 dir = normalize(ray);
-        lowp float eps = 1.001 - dot(dir, vec3(0.0, 0.0, -1.0));
+        lowp float eps = 0.002;//1.001 - dot(dir, vec3(0.0, 0.0, -1.0));
         bool hit = false;
+        highp float count = 0.0;
         lowp vec3 p;
+        lowp vec3 cr = cross(vec3(0.0, 0.0, -1.0), dir);
+            //normalize(vec3(-0.5, 0.0, -4.0)));
+        lowp vec3 n = normalize(cr);
+        highp float th = asin(length(cr));
         for (int i = 0; i < 1000; ++i) {
-          p = pos-translate;
+          lowp vec3 q = pos;
+          lowp float a = 1000.0;
+          q.x /= a;
+          q.y /= a;
+          p = rotate(q, th, n)-translate;
           lowp float dist = distance(p);
           if (length(pos) > 100.0) {
             break;
@@ -51,8 +61,11 @@
             hit = true;
             break;
           }
-          pos += 0.5 * dir * dist;
+          count += 0.02;
+          pos += 0.9 * dir * dist;
         }
+        lowp float red = 1.0-clamp(length(pos) / 100.0, 0.0, 1.0);
+        lowp float blue = count;
         if (hit) {
           lowp vec3 dx = vec3(0.01, 0.0,  0.0);
           lowp vec3 dy = vec3(0.0,  0.01, 0.0);
@@ -61,7 +74,7 @@
             distance(p+dx) - distance(p-dx),
             distance(p+dy) - distance(p-dy),
             distance(p+dz) - distance(p-dz)));
-          lowp vec3 lightdir = pos - vec3(0, 0, -5);
+          lowp vec3 lightdir = pos - vec3(0, 0, -2);
           lowp vec3 nlightdir = normalize(lightdir);
           lowp vec3 lightdir2 = pos - vec3(4, 0, -5);
           lowp vec3 nlightdir2 = normalize(lightdir2);
@@ -73,9 +86,11 @@
           lowp float spec =pow(clamp(-dot(normalize(dir), reflect(nlightdir, normal)), 0.0, 1.0), 80.0);
           lowp float spec2 =pow(clamp(-dot(normalize(dir), reflect(nlightdir2, normal)), 0.0, 1.0), 80.0);
           lowp float spec3 =pow(clamp(-dot(normalize(dir), reflect(nlightdir3, normal)), 0.0, 1.0), 80.0);
-          gl_FragColor = vec4(intensity +intensity3+ spec+spec3, intensity +spec, intensity +intensity2+ spec+spec2, 1.0);
+          //gl_FragColor = vec4(intensity +intensity3+ spec+spec3, intensity +spec, intensity +intensity2+ spec+spec2, 1.0);
+          gl_FragColor = vec4(red, blue, 0.0, 1.0);
         } else {
-          discard;
+          //discard;
+          gl_FragColor = vec4(red, blue, 0.0, 1.0);
         }
       }
 
@@ -85,19 +100,24 @@
       lowp float leaf(lowp vec3 pos);
       lowp float sphere(lowp vec3 pos);
       lowp float cube(lowp vec3 pos);
+      lowp vec3 scale(lowp vec3 pos);
+
+      lowp float both(lowp vec3 pos) {
+        return min(sphere(pos-vec3(1.1, 0.0, 0.0)), cube(pos+vec3(1.1, 0.0, 0.0)));
+      }
 
       lowp float distance(lowp vec3 pos) {
         return cube(pos);
       }
 
       lowp float cube(lowp vec3 pos) {
-        lowp vec3 dist = abs(rotate(pos, pos.y)) - vec3(0.5);
+        lowp vec3 dist = abs(pos) - vec3(1.0);
         return min(max(max(dist.x, dist.y), dist.z),
             length(max(dist, 0.0)));
       }
 
       lowp float sphere(lowp vec3 pos) {
-        return length(pos)-0.5;
+        return length(pos)-sqrt(2.0);
       }
 
       lowp float torus(lowp vec3 pos) {
@@ -113,10 +133,10 @@
         lowp float distBottom = dot(pos, vec3(0.0, -1.0, 0.0))-1.0;
         lowp float theta = atan(pos.z, pos.x);
         lowp float distCyl = length(pos.xz)-0.25;
-        distCyl -= 1.0/16.0-(pos.y/8.0)*(pos.y/8.0);
+        distCyl -= 1.0/16.0-(pos.y/4.0)*(pos.y/4.0);
         //distCyl += 0.01*sin(theta*32.0);
-        lowp float a = ((mod(32.0*theta/3.14159+0.5,1.0))-0.5);
-        distCyl -= 0.01*a*a;
+        lowp float a = ((mod(8.0*theta/3.14159+0.5,1.0))-0.5);
+        distCyl -= 0.05*a*a;
         return max(max(distTop, distBottom), distCyl);
       }
 
@@ -125,6 +145,26 @@
         p.z += sin(p.y / 8.0);
         return max(max(dot(p, vec3(0.0, 0.0, 1.0))+4.0, length(p.xy*vec2(1.0,1.5))-1.0),
             dot(p, vec3(0.0, 0.0, -1.0))-4.01);
+      }
+
+      lowp vec3 scale(lowp vec3 pos) {
+        lowp mat3 s = mat3(1.0);
+        s[0][0] = 0.5;
+        return s * pos;
+      }
+
+      lowp vec3 rotate(lowp vec3 pos, lowp float theta, lowp vec3 u) {
+        lowp mat3 r = mat3(0.0);
+        r[0][0] = cos(theta)+u.x*u.x*(1.0-cos(theta));
+        r[0][1] = u.y*u.x*(1.0-cos(theta))+u.z*sin(theta);
+        r[0][2] = u.z*u.x*(1.0-cos(theta))-u.y*sin(theta);
+        r[1][0] = u.x*u.y*(1.0-cos(theta))-u.z*sin(theta);
+        r[1][1] = cos(theta)+u.y*u.y*(1.0-cos(theta));
+        r[1][2] = u.z*u.y*(1.0-cos(theta))+u.x*sin(theta);
+        r[2][0] = u.x*u.z*(1.0-cos(theta))+u.y*sin(theta);
+        r[2][1] = u.y*u.z*(1.0-cos(theta))-u.x*sin(theta);
+        r[2][2] = cos(theta)+u.z*u.z*(1.0-cos(theta));
+        return r * pos;
       }
 
       lowp vec3 rotate(lowp vec3 pos, lowp float a) {

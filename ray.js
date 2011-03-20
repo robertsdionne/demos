@@ -36,7 +36,7 @@ ray.load = function() {
 };
 
 
-var X = -2;
+var X = 0;
 var Y = 0;
 var Z = -5;
 
@@ -55,10 +55,10 @@ var update = function() {
     X += 0.1;
   }
   if (keys.isDown(65)) {
-    Z += 0.2;
+    Z += 0.1;
   }
   if (keys.isDown(90)) {
-    Z -= 0.2;
+    Z -= 0.1;
   }
 };
 
@@ -91,42 +91,49 @@ var onCreate = function(gl, p, b) {
   p.translate = gl.getUniformLocation(p, 'translate');
 
   var data = [
-    1.0, -1.0,  1.0,
-    1.0,  1.0,  1.0,
-   -1.0, -1.0,  1.0,
-   -1.0, -1.0,  1.0,
-    1.0,  1.0,  1.0,
-   -1.0,  1.0,  1.0,
-   -1.0, -1.0,  1.0,
-   -1.0,  1.0,  1.0,
-   -1.0, -1.0, -1.0,
-   -1.0, -1.0, -1.0,
-   -1.0,  1.0,  1.0,
-   -1.0,  1.0, -1.0,
-    1.0,  1.0,  1.0,
-    1.0, -1.0,  1.0,
-    1.0, -1.0, -1.0,
-    1.0,  1.0,  1.0,
-    1.0, -1.0, -1.0,
-    1.0,  1.0, -1.0,
-    -1.0, 1.0, 1.0,
-    1.0, 1.0, 1.0,
-    1.0, 1.0, -1.0,
-    -1.0, 1.0, 1.0,
-    1.0, 1.0, -1.0,
-    -1.0, 1.0, -1.0,
-    1.0, -1.0, 1.0,
-    -1.0, -1.0, 1.0,
-    1.0, -1.0, -1.0,
-    1.0, -1.0, -1.0,
-    -1.0, -1.0, 1.0,
-    -1.0, -1.0, -1.0,
-    1.0,  1.0,  -1.0,
     1.0, -1.0,  -1.0,
-   -1.0, -1.0,  -1.0,
     1.0,  1.0,  -1.0,
    -1.0, -1.0,  -1.0,
-   -1.0,  1.0,  -1.0
+   -1.0, -1.0,  -1.0,
+    1.0,  1.0,  -1.0,
+   -1.0,  1.0,  -1.0,
+
+//  1.0, -1.0,  1.0,
+//  1.0,  1.0,  1.0,
+// -1.0, -1.0,  1.0,
+// -1.0, -1.0,  1.0,
+//  1.0,  1.0,  1.0,
+// -1.0,  1.0,  1.0,
+// -1.0, -1.0,  1.0,
+// -1.0,  1.0,  1.0,
+// -1.0, -1.0, -1.0,
+// -1.0, -1.0, -1.0,
+// -1.0,  1.0,  1.0,
+// -1.0,  1.0, -1.0,
+//  1.0,  1.0,  1.0,
+//  1.0, -1.0,  1.0,
+//  1.0, -1.0, -1.0,
+//  1.0,  1.0,  1.0,
+//  1.0, -1.0, -1.0,
+//  1.0,  1.0, -1.0,
+//  -1.0, 1.0, 1.0,
+//  1.0, 1.0, 1.0,
+//  1.0, 1.0, -1.0,
+//  -1.0, 1.0, 1.0,
+//  1.0, 1.0, -1.0,
+//  -1.0, 1.0, -1.0,
+//  1.0, -1.0, 1.0,
+//  -1.0, -1.0, 1.0,
+//  1.0, -1.0, -1.0,
+//  1.0, -1.0, -1.0,
+//  -1.0, -1.0, 1.0,
+//  -1.0, -1.0, -1.0,
+//  1.0,  1.0,  -1.0,
+//  1.0, -1.0,  -1.0,
+// -1.0, -1.0,  -1.0,
+//  1.0,  1.0,  -1.0,
+// -1.0, -1.0,  -1.0,
+// -1.0,  1.0,  -1.0
   ];
 
   var a = new Float32Array(data);
@@ -148,15 +155,15 @@ var onDraw = function(gl, p, b) {
   gl.bindBuffer(gl.ARRAY_BUFFER, b);
   gl.vertexAttribPointer(p.position, 3, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(p.position);
-  gl.drawArrays(gl.TRIANGLES, 0, 36);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
   gl.disableVertexAttribArray(p.position);
 
-  gl.uniform3fv(p.translate, new Float32Array([X+2, Y, Z]));
-  gl.bindBuffer(gl.ARRAY_BUFFER, b);
-  gl.vertexAttribPointer(p.position, 3, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(p.position);
-  gl.drawArrays(gl.TRIANGLES, 0, 36);
-  gl.disableVertexAttribArray(p.position);
+//gl.uniform3fv(p.translate, new Float32Array([X+2, Y, Z]));
+//gl.bindBuffer(gl.ARRAY_BUFFER, b);
+//gl.vertexAttribPointer(p.position, 3, gl.FLOAT, false, 0, 0);
+//gl.enableVertexAttribArray(p.position);
+//gl.drawArrays(gl.TRIANGLES, 0, 36);
+//gl.disableVertexAttribArray(p.position);
 
   gl.flush();
 };
