@@ -103,8 +103,10 @@
         }
       }
 
+      lowp float plane(lowp vec3 pos);
       lowp float sphere(lowp vec3 pos);
-      lowp float leaf(lowp vec3 pos);
+      lowp float disc(lowp vec3 pos);
+      lowp float wafer(lowp vec3 pos);
       lowp float torus(lowp vec3 pos);
       lowp float cube(lowp vec3 pos);
       lowp float twistedCube(lowp vec3 pos);
@@ -121,20 +123,30 @@
       
       lowp float distance(lowp vec3 pos) {
         if (distanceFn == 0) {
-          return sphere(pos);
+          return plane(pos);
         } else if (distanceFn == 1) {
-          return leaf(pos);
+          return disc(pos);
         } else if (distanceFn == 2) {
-          return torus(pos);
+          return wafer(pos);
         } else if (distanceFn == 3) {
-          return cube(pos);
+          return sphere(pos);
         } else if (distanceFn == 4) {
-          return twistedCube(pos);
+          return torus(pos);
         } else if (distanceFn == 5) {
-          return column(pos);
-        } else {
+          return cube(pos);
+        } else if (distanceFn == 6) {
+          return twistedCube(pos);
+        } else if (distanceFn == 7) {
           return columnTwo(pos);
+        } else {
+          return column(pos);
         }
+      }
+
+      lowp float plane(lowp vec3 pos) {
+        pos.y += 1.0;
+        return max(dot(pos, vec3(0.0, 1.0, 0.0)),
+            dot(pos, vec3(0.0, -1.0, 0.0))-0.01);
       }
 
       lowp float cube(lowp vec3 pos) {
@@ -179,11 +191,16 @@
         return twistedRectangularPrism(pos, vec3(1.0, 4.0, 1.0));
       }
 
-      lowp float leaf(lowp vec3 pos) {
-        lowp vec3 p = pos;
-        p.z += sin(p.y / 8.0);
-        return max(max(dot(p, vec3(0.0, 0.0, 1.0)), length(p.xy*vec2(1.0,1.5))-1.0),
-            dot(p, vec3(0.0, 0.0, -1.0))-0.01);
+      lowp float disc(lowp vec3 pos) {
+        pos.y += 1.0;
+        return max(max(dot(pos, vec3(0.0, 1.0, 0.0)),
+            length(pos.xz*vec2(1.0,1.0))-1.0),
+                dot(pos, vec3(0.0, -1.0, 0.0))-0.01);
+      }
+
+      lowp float wafer(lowp vec3 pos) {
+        pos.y += sin(pos.x * 40.0)/100.;
+        return disc(pos);
       }
 
       lowp vec3 scale(lowp vec3 pos) {

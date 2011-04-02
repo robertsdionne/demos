@@ -24,6 +24,7 @@ ray.load = function() {
   }, 10);
 };
 
+var MAX_FN_INDEX = 8;
 
 var X = 0;
 var Y = 0;
@@ -55,7 +56,7 @@ var update = function() {
     debug = !debug;
   }
   if (keys.justPressed(ray.Key.N)) {
-    if (distanceFn < 6) {
+    if (distanceFn < MAX_FN_INDEX) {
       ++distanceFn;
     } else {
       distanceFn = 0;
@@ -65,7 +66,7 @@ var update = function() {
     if (distanceFn > 0) {
       --distanceFn;
     } else {
-      distanceFn = 6;
+      distanceFn = MAX_FN_INDEX;
     }
   }
   keys.update();
