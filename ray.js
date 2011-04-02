@@ -5,7 +5,6 @@ var keys = new ray.Keys(document);
 
 ray.load = function() {
   var canvas = document.getElementById('c');
-  var fps = document.getElementById('fps');
   keys.install();
   canvas.width = 640;
   canvas.height = 640;
@@ -14,16 +13,12 @@ ray.load = function() {
   var b = gl.createBuffer();
   onCreate(gl, p, b);
   var width, height;
-  var lastTick = Date.now();
   window.setInterval(function() {
     if (width !== canvas.width || height !== canvas.height) {
       width = canvas.width;
       height = canvas.height;
       onChange(gl, width, height);
     }
-    var currentTick = Date.now();
-    fps.innerHTML = '' + Math.floor(1000 / (currentTick - lastTick));
-    lastTick = currentTick;
     update();
     onDraw(gl, p, b);
   }, 10);
@@ -36,22 +31,22 @@ var Z = -5;
 
 
 var update = function() {
-  if (keys.isPressed(ray.Key.UP)) {
+  if (keys.isPressed(ray.Key.W)) {
     Y += 0.1;
   }
-  if (keys.isPressed(ray.Key.DOWN)) {
+  if (keys.isPressed(ray.Key.S)) {
     Y -= 0.1;
   }
-  if (keys.isPressed(ray.Key.LEFT)) {
+  if (keys.isPressed(ray.Key.A)) {
     X -= 0.1;
   }
-  if (keys.isPressed(ray.Key.RIGHT)) {
+  if (keys.isPressed(ray.Key.D)) {
     X += 0.1;
   }
   if (keys.isPressed(ray.Key.Z)) {
     Z += 0.1;
   }
-  if (keys.isPressed(ray.Key.A)) {
+  if (keys.isPressed(ray.Key.Q)) {
     Z -= 0.1;
   }
   keys.update();

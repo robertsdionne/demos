@@ -26,13 +26,13 @@
       varying lowp vec3 ray;
 
       lowp float distance(lowp vec3 pos);
-      lowp vec3 rotate(lowp vec3 pos, lowp float a);
+      lowp vec3 rotateY(lowp vec3 pos, lowp float a);
       lowp vec3 rotate(lowp vec3 pos, lowp float theta, lowp vec3 u);
 
       lowp float r = 0.22;
       lowp float R = 0.5;
       void main() {
-        lowp vec3 pos = ray;
+        lowp vec3 pos = vec3(0);
         lowp vec3 dir = normalize(ray);
         lowp float eps = 0.002;//1.001 - dot(dir, vec3(0.0, 0.0, -1.0));
         bool hit = false;
@@ -81,34 +81,53 @@
           lowp float spec =pow(clamp(-dot(normalize(dir), reflect(nlightdir, normal)), 0.0, 1.0), 80.0);
           lowp float spec2 =pow(clamp(-dot(normalize(dir), reflect(nlightdir2, normal)), 0.0, 1.0), 80.0);
           lowp float spec3 =pow(clamp(-dot(normalize(dir), reflect(nlightdir3, normal)), 0.0, 1.0), 80.0);
-          //gl_FragColor = vec4(intensity +intensity3+ spec+spec3, intensity +spec, intensity +intensity2+ spec+spec2, 1.0);
-          gl_FragColor = vec4(red, blue, 0.0, 1.0);
+          gl_FragColor = vec4(intensity +intensity3+ spec+spec3, intensity +spec, intensity +intensity2+ spec+spec2, 1.0);
+          //gl_FragColor = vec4(red, blue, 0.0, 1.0);
         } else {
-          //discard;
-          gl_FragColor = vec4(red, blue, 0.0, 1.0);
+          discard;
+          //gl_FragColor = vec4(red, blue, 0.0, 1.0);
         }
       }
 
       lowp float torus(lowp vec3 pos);
       lowp float column(lowp vec3 pos);
+      lowp float columnTwo(lowp vec3 pos);
       lowp float slice(lowp vec3 pos);
       lowp float leaf(lowp vec3 pos);
       lowp float sphere(lowp vec3 pos);
       lowp float cube(lowp vec3 pos);
+      lowp float twistedCube(lowp vec3 pos);
+
+      lowp float rectangularPrism(lowp vec3 pos, lowp vec3 pos);
+      lowp float twistedRectangularPrism(lowp vec3 pos, lowp vec3 pos);
       lowp vec3 scale(lowp vec3 pos);
 
       lowp float both(lowp vec3 pos) {
         return min(sphere(pos-vec3(1.1, 0.0, 0.0)), cube(pos+vec3(1.1, 0.0, 0.0)));
       }
-
+      
       lowp float distance(lowp vec3 pos) {
+        pos.x += sin(pos.x * pos.y * 400.0)/100.0;
         return torus(pos);
       }
 
       lowp float cube(lowp vec3 pos) {
-        lowp vec3 dist = abs(pos) - vec3(1.0);
+        return rectangularPrism(pos, vec3(1.0));
+      }
+
+      lowp float twistedCube(lowp vec3 pos) {
+        return twistedRectangularPrism(pos, vec3(1.0));
+      }
+
+      lowp float rectangularPrism(lowp vec3 pos, lowp vec3 size) {
+        lowp vec3 dist = abs(pos) - size;
         return min(max(max(dist.x, dist.y), dist.z),
             length(max(dist, 0.0)));
+      }
+
+      lowp float twistedRectangularPrism(lowp vec3 pos, lowp vec3 size) {
+        pos = rotateY(pos, pos.y);
+        return rectangularPrism(pos, size);
       }
 
       lowp float sphere(lowp vec3 pos) {
@@ -124,22 +143,25 @@
       }
 
       lowp float column(lowp vec3 pos) {
-        lowp float distTop = dot(pos, vec3(0.0, 1.0, 0.0))-1.0;
-        lowp float distBottom = dot(pos, vec3(0.0, -1.0, 0.0))-1.0;
+        lowp float distTop = dot(pos, vec3(0.0, 1.0, 0.0))-2.0;
+        lowp float distBottom = dot(pos, vec3(0.0, -1.0, 0.0))-2.0;
         lowp float theta = atan(pos.z, pos.x);
         lowp float distCyl = length(pos.xz)-0.25;
-        distCyl -= 1.0/16.0-(pos.y/4.0)*(pos.y/4.0);
-        //distCyl += 0.01*sin(theta*32.0);
-        lowp float a = ((mod(8.0*theta/3.14159+0.5,1.0))-0.5);
+        distCyl -= 1.0/16.0-(pos.y/8.0)*(pos.y/8.0);
+        lowp float a = ((mod(12.0*theta/3.14159+0.5,1.0))-0.5);
         distCyl -= 0.05*a*a;
         return max(max(distTop, distBottom), distCyl);
+      }
+
+      lowp float columnTwo(lowp vec3 pos) {
+        return twistedRectangularPrism(pos, vec3(1.0, 4.0, 1.0));
       }
 
       lowp float leaf(lowp vec3 pos) {
         lowp vec3 p = pos;
         p.z += sin(p.y / 8.0);
         return max(max(dot(p, vec3(0.0, 0.0, 1.0))+4.0, length(p.xy*vec2(1.0,1.5))-1.0),
-            dot(p, vec3(0.0, 0.0, -1.0))-4.01);
+            dot(p, vec3(0.0, 0.0, -1.0))-4.11);
       }
 
       lowp vec3 scale(lowp vec3 pos) {
@@ -162,7 +184,7 @@
         return r * pos;
       }
 
-      lowp vec3 rotate(lowp vec3 pos, lowp float a) {
+      lowp vec3 rotateY(lowp vec3 pos, lowp float a) {
         lowp mat3 r = mat3(1);
         r[0][0] = cos(a);
         r[2][0] = sin(a);
@@ -173,17 +195,16 @@
     </script>
   </head>
   <body onload="ray.load();">
-    <div id="fps"></div>
     <div style="float: left;">
       <canvas id="c"></canvas>
     </div>
     <p><b>Controls</b></p>
     <table>
       <tr><th>Shape Translation</th></tr>
-      <tr><td><b>right</b></td><td>Positive X.</td></tr>
-      <tr><td><b>left</b></td><td>Negative X.</td></tr>
-      <tr><td><b>up</b></td><td>Positive Y.</td></tr>
-      <tr><td><b>down</b></td><td>Negative Y.</td></tr>
+      <tr><td><b>d</b></td><td>Positive X.</td></tr>
+      <tr><td><b>a</b></td><td>Negative X.</td></tr>
+      <tr><td><b>w</b></td><td>Positive Y.</td></tr>
+      <tr><td><b>s</b></td><td>Negative Y.</td></tr>
       <tr><td><b>z</b></td><td>Positive Z.</td></tr>
       <tr><td><b>a</b></td><td>Negative Z.</td></tr>
     </table>
