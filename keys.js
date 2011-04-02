@@ -1,76 +1,93 @@
-// Copyright 2010.
+// Copyright 2011 ... All Rights Reserved.
 
-goog.provide('ray.Key');
-goog.provide('ray.Keys');
+/**
+ * @param {Document} document
+ * @constructor
+ */
+ray.Keys = function(document) {
+  /**
+   * @type {Document}
+   */
+  this.document_ = document;
 
-goog.require('goog.events');
-goog.require('goog.events.KeyHandler');
+  /**
+   * @type {Object}
+   */
+  this.keys_ = {};
+
+  /**
+   * @type {Object}
+   */
+  this.oldKeys_ = {};
+};
 
 
 ray.Key = {
-  FIRE: 32,
   LEFT: 37,
   UP: 38,
   RIGHT: 39,
   DOWN: 40,
+  W: 87,
+  A: 65,
+  S: 83,
+  D: 68,
+  Q: 81,
+  Z: 90,
+  N: 78,
+  P: 80,
+  LT: 188,
+  GT: 190
 };
 
 
-ray.Keys = function() {
-  this.keys_ = [];
-  this.oldKeys_ = [];
-  this.element_;
-  this.handler_ = new goog.events.KeyHandler();
-};
-
-
-ray.Keys.prototype.install = function(element) {
-  this.element_ = element;
-  this.handler_.attach(element);
-  goog.events.listen(
-      this.handler_, 'key', goog.bind(this.onKeyDown_, this));
-  goog.events.listen(
-      this.element_, 'keyup', goog.bind(this.onKeyUp_, this));
-};
-
-
-ray.Keys.prototype.isDown = function(key) {
-  return this.keys_[key];
-};
-
-
-ray.Keys.prototype.isUp = function(key) {
-  return !this.keys_[key];
-};
-
-
-ray.Keys.prototype.justDown = function(key) {
-  return this.keys_[key] && !this.oldKeys_[key];
-};
-
-
-ray.Keys.prototype.justUp = function(key) {
-  return !this.keys_[key] && this.oldKeys_[key];
-};
-
-
-ray.Keys.prototype.onKeyDown_ = function(e) {
-  this.keys_[e.keyCode] = true;
-};
-
-
-ray.Keys.prototype.onKeyUp_ = function(e) {
-  this.keys_[e.keyCode] = false;
-};
-
-
-ray.Keys.prototype.update = function() {
-  this.oldKeys_ = this.keys_.slice();
+/**
+ *
+ */
+ray.Keys.prototype.install = function() {
+  this.document_.onkeydown = ray.bind(this.handleKeyDown_, this);
+  this.document_.onkeyup = ray.bind(this.handleKeyUp_, this);
 };
 
 
 ray.Keys.prototype.uninstall = function() {
-  goog.events.removeAll(this.element_);
-  this.handler_.detach();
-  this.element_ = null;
+  this.document_.onkeydown = this.document_.onkeyup = null;
+};
+
+
+ray.Keys.prototype.handleKeyDown_ = function(event) {
+  this.keys_[event.keyCode] = true;
+  return true;
+};
+
+
+ray.Keys.prototype.handleKeyUp_ = function(event) {
+  this.keys_[event.keyCode] = false;
+  return true;
+};
+
+
+ray.Keys.prototype.isHeld = function(key) {
+  return this.isPressed(key) && this.oldKeys_[key];
+};
+
+
+ray.Keys.prototype.isPressed = function(key) {
+  return this.keys_[key];
+};
+
+
+ray.Keys.prototype.justPressed = function(key) {
+  return this.isPressed(key) && !this.oldKeys_[key];
+};
+
+
+ray.Keys.prototype.justReleased = function(key) {
+  return !this.isPressed(key) && this.oldKeys_[key];
+};
+
+
+ray.Keys.prototype.update = function() {
+  for (var key in this.keys_) {
+    this.oldKeys_[key] = this.keys_[key];
+  }
 };

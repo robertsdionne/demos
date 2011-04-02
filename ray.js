@@ -1,18 +1,12 @@
 // Copyright 2010 Robert Scott Dionne. All Rights Reserved.
 
-goog.provide('ray');
-
-goog.require('ray.Key');
-goog.require('ray.Keys');
-
-
-var keys = new ray.Keys();
+var keys = new ray.Keys(document);
 
 
 ray.load = function() {
   var canvas = document.getElementById('c');
   var fps = document.getElementById('fps');
-  keys.install(window);
+  keys.install();
   canvas.width = 640;
   canvas.height = 640;
   var gl = canvas.getContext('experimental-webgl');
@@ -42,24 +36,25 @@ var Z = -5;
 
 
 var update = function() {
-  if (keys.isDown(ray.Key.UP)) {
+  if (keys.isPressed(ray.Key.UP)) {
     Y += 0.1;
   }
-  if (keys.isDown(ray.Key.DOWN)) {
+  if (keys.isPressed(ray.Key.DOWN)) {
     Y -= 0.1;
   }
-  if (keys.isDown(ray.Key.LEFT)) {
+  if (keys.isPressed(ray.Key.LEFT)) {
     X -= 0.1;
   }
-  if (keys.isDown(ray.Key.RIGHT)) {
+  if (keys.isPressed(ray.Key.RIGHT)) {
     X += 0.1;
   }
-  if (keys.isDown(65)) {
+  if (keys.isPressed(ray.Key.Z)) {
     Z += 0.1;
   }
-  if (keys.isDown(90)) {
+  if (keys.isPressed(ray.Key.A)) {
     Z -= 0.1;
   }
+  keys.update();
 };
 
 var onCreate = function(gl, p, b) {
@@ -157,13 +152,6 @@ var onDraw = function(gl, p, b) {
   gl.enableVertexAttribArray(p.position);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
   gl.disableVertexAttribArray(p.position);
-
-//gl.uniform3fv(p.translate, new Float32Array([X+2, Y, Z]));
-//gl.bindBuffer(gl.ARRAY_BUFFER, b);
-//gl.vertexAttribPointer(p.position, 3, gl.FLOAT, false, 0, 0);
-//gl.enableVertexAttribArray(p.position);
-//gl.drawArrays(gl.TRIANGLES, 0, 36);
-//gl.disableVertexAttribArray(p.position);
 
   gl.flush();
 };

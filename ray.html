@@ -1,12 +1,7 @@
 <!-- Copyright 2010 Robert Scott Dionne. All Rights Reserved. -->
 <html>
   <head>
-    <script src="../closure-library/closure/goog/base.js"
-        type="application/javascript"></script>
-    <script src="deps.js" type="application/javascript"></script>
-    <script type="application/javascript">
-      goog.require('ray');
-    </script>
+    <script src="base.js" type="application/javascript"></script>
     <script id="v" type="x-shader/x-vertex">
       uniform vec3 translate;
       attribute vec3 position;
@@ -34,7 +29,7 @@
       lowp vec3 rotate(lowp vec3 pos, lowp float a);
       lowp vec3 rotate(lowp vec3 pos, lowp float theta, lowp vec3 u);
 
-      lowp float r = 0.32;
+      lowp float r = 0.22;
       lowp float R = 0.5;
       void main() {
         lowp vec3 pos = ray;
@@ -107,7 +102,7 @@
       }
 
       lowp float distance(lowp vec3 pos) {
-        return cube(pos);
+        return torus(pos);
       }
 
       lowp float cube(lowp vec3 pos) {
