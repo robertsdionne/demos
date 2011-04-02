@@ -28,6 +28,8 @@ ray.load = function() {
 var X = 0;
 var Y = 0;
 var Z = -5;
+var debug = false;
+var distanceFn = 0;
 
 
 var update = function() {
@@ -48,6 +50,23 @@ var update = function() {
   }
   if (keys.isPressed(ray.Key.Q)) {
     Z -= 0.1;
+  }
+  if (keys.justPressed(ray.Key.Y)) {
+    debug = !debug;
+  }
+  if (keys.justPressed(ray.Key.N)) {
+    if (distanceFn < 6) {
+      ++distanceFn;
+    } else {
+      distanceFn = 0;
+    }
+  }
+  if (keys.justPressed(ray.Key.P)) {
+    if (distanceFn > 0) {
+      --distanceFn;
+    } else {
+      distanceFn = 6;
+    }
   }
   keys.update();
 };
@@ -79,6 +98,8 @@ var onCreate = function(gl, p, b) {
   p.position = gl.getAttribLocation(p, 'position');
 
   p.translate = gl.getUniformLocation(p, 'translate');
+  p.debug = gl.getUniformLocation(p, 'debug');
+  p.distanceFn = gl.getUniformLocation(p, 'distanceFn');
 
   var data = [
     1.0, -1.0,  -1.0,
@@ -142,6 +163,8 @@ var onDraw = function(gl, p, b) {
   gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
   gl.uniform3fv(p.translate, new Float32Array([X, Y, Z]));
+  gl.uniform1i(p.debug, debug);
+  gl.uniform1i(p.distanceFn, distanceFn);
   gl.bindBuffer(gl.ARRAY_BUFFER, b);
   gl.vertexAttribPointer(p.position, 3, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(p.position);

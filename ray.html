@@ -22,6 +22,8 @@
       }
     </script>
     <script id="f" type="x-shader/x-fragment">
+      uniform bool debug;
+      uniform int distanceFn;
       uniform lowp vec3 translate;
       varying lowp vec3 ray;
 
@@ -59,7 +61,7 @@
           count += 0.02;
           pos += 0.9 * dir * dist;
         }
-        lowp float red = 1.0-clamp(length(pos) / 100.0, 0.0, 1.0);
+        lowp float red = 0.;//1.0-clamp(length(pos) / 100.0, 0.0, 1.0);
         lowp float blue = count;
         if (hit) {
           lowp vec3 dx = vec3(0.01, 0.0,  0.0);
@@ -76,27 +78,38 @@
           lowp vec3 lightdir3 = pos - vec3(-4, 0, -5);
           lowp vec3 nlightdir3 = normalize(lightdir3);
           lowp float intensity = clamp(-dot(nlightdir, normal), 0.0, 1.0);
-          lowp float intensity2 = clamp(-dot(nlightdir2, normal)/length(lightdir2), 0.0, 1.0);
-          lowp float intensity3 = clamp(-dot(nlightdir3, normal)/length(lightdir3), 0.0, 1.0);
-          lowp float spec =pow(clamp(-dot(normalize(dir), reflect(nlightdir, normal)), 0.0, 1.0), 80.0);
-          lowp float spec2 =pow(clamp(-dot(normalize(dir), reflect(nlightdir2, normal)), 0.0, 1.0), 80.0);
-          lowp float spec3 =pow(clamp(-dot(normalize(dir), reflect(nlightdir3, normal)), 0.0, 1.0), 80.0);
-          gl_FragColor = vec4(intensity +intensity3+ spec+spec3, intensity +spec, intensity +intensity2+ spec+spec2, 1.0);
-          //gl_FragColor = vec4(red, blue, 0.0, 1.0);
+          lowp float intensity2 = clamp(-dot(nlightdir2, normal)/
+              length(lightdir2), 0.0, 1.0);
+          lowp float intensity3 = clamp(-dot(nlightdir3, normal)/
+              length(lightdir3), 0.0, 1.0);
+          lowp float spec =pow(clamp(-dot(normalize(dir),
+              reflect(nlightdir, normal)), 0.0, 1.0), 80.0);
+          lowp float spec2 =pow(clamp(-dot(normalize(dir),
+              reflect(nlightdir2, normal)), 0.0, 1.0), 80.0);
+          lowp float spec3 =pow(clamp(-dot(normalize(dir),
+              reflect(nlightdir3, normal)), 0.0, 1.0), 80.0);
+          if (debug) {
+            gl_FragColor = vec4(0., count, 0., 1.);
+          } else {
+            gl_FragColor = vec4(intensity +intensity3+ spec+spec3,
+                intensity +spec, intensity +intensity2+ spec+spec2, 1.0);
+          }
         } else {
-          discard;
-          //gl_FragColor = vec4(red, blue, 0.0, 1.0);
+          if (debug) {
+            gl_FragColor = vec4(0., count, 0., 1.);
+          } else {
+           discard;
+         }
         }
       }
 
-      lowp float torus(lowp vec3 pos);
-      lowp float column(lowp vec3 pos);
-      lowp float columnTwo(lowp vec3 pos);
-      lowp float slice(lowp vec3 pos);
-      lowp float leaf(lowp vec3 pos);
       lowp float sphere(lowp vec3 pos);
+      lowp float leaf(lowp vec3 pos);
+      lowp float torus(lowp vec3 pos);
       lowp float cube(lowp vec3 pos);
       lowp float twistedCube(lowp vec3 pos);
+      lowp float column(lowp vec3 pos);
+      lowp float columnTwo(lowp vec3 pos);
 
       lowp float rectangularPrism(lowp vec3 pos, lowp vec3 pos);
       lowp float twistedRectangularPrism(lowp vec3 pos, lowp vec3 pos);
@@ -107,8 +120,21 @@
       }
       
       lowp float distance(lowp vec3 pos) {
-        pos.x += sin(pos.x * pos.y * 400.0)/100.0;
-        return torus(pos);
+        if (distanceFn == 0) {
+          return sphere(pos);
+        } else if (distanceFn == 1) {
+          return leaf(pos);
+        } else if (distanceFn == 2) {
+          return torus(pos);
+        } else if (distanceFn == 3) {
+          return cube(pos);
+        } else if (distanceFn == 4) {
+          return twistedCube(pos);
+        } else if (distanceFn == 5) {
+          return column(pos);
+        } else {
+          return columnTwo(pos);
+        }
       }
 
       lowp float cube(lowp vec3 pos) {
@@ -138,10 +164,6 @@
         return length(vec2(length(pos.xz)-R,pos.y))-r;
       }
 
-      lowp float slice(lowp vec3 pos) {
-        return 0.0;
-      }
-
       lowp float column(lowp vec3 pos) {
         lowp float distTop = dot(pos, vec3(0.0, 1.0, 0.0))-2.0;
         lowp float distBottom = dot(pos, vec3(0.0, -1.0, 0.0))-2.0;
@@ -160,8 +182,8 @@
       lowp float leaf(lowp vec3 pos) {
         lowp vec3 p = pos;
         p.z += sin(p.y / 8.0);
-        return max(max(dot(p, vec3(0.0, 0.0, 1.0))+4.0, length(p.xy*vec2(1.0,1.5))-1.0),
-            dot(p, vec3(0.0, 0.0, -1.0))-4.11);
+        return max(max(dot(p, vec3(0.0, 0.0, 1.0)), length(p.xy*vec2(1.0,1.5))-1.0),
+            dot(p, vec3(0.0, 0.0, -1.0))-0.01);
       }
 
       lowp vec3 scale(lowp vec3 pos) {
@@ -206,7 +228,12 @@
       <tr><td><b>w</b></td><td>Positive Y.</td></tr>
       <tr><td><b>s</b></td><td>Negative Y.</td></tr>
       <tr><td><b>z</b></td><td>Positive Z.</td></tr>
-      <tr><td><b>a</b></td><td>Negative Z.</td></tr>
+      <tr><td><b>q</b></td><td>Negative Z.</td></tr>
+      <tr><th>Shape Selection</th></tr>
+      <tr><td><b>n</b></td><td>Next shape.</td></tr>
+      <tr><td><b>p</b></td><td>Previous shape.</td></tr>
+      <tr><th>Debug Mode (loop iterations per fragment)</th></tr>
+      <tr><td><b>y</b></td><td>Toggle.</td></tr>
     </table>
   </body>
 </html>
