@@ -1,0 +1,22 @@
+Demos
+Author: Robert Dionne
+
+Demos is a signed distance field raytracer. It has a debug rendering mode that shows the number of loop iterations per fragment, and an eye-tracker level-of-detail mode that lowers the raytracer accuracy for fragments towards the edges of the screen.
+
+Mac OS X support:
+Google Chrome 10: http://www.google.com/chrome
+Mozilla Firefox 4: http://www.mozilla.com/en-US/firefox/new/
+
+Windows 7 support:
+Google Chrome 10: http://www.google.com/chrome
+Mozilla Firefox 4: http://www.mozilla.com/en-US/firefox/new/
+
+NOTE: It seems Windows 7 WebGL implementations do not support loop constructs, at least for my video card, so they unroll the raytracing step loop while they convert the GLSL to HLSL for DirectX. Since the loop is 100 iterations maximum, this step can take quite a while (~3 minutes). I recommend using Firefox 4 since it happily generates the unrolled shader and compiles it. Chrome 10 can also do it successfully but it will complain with several annoying dialogs. Or better yet, use a Macbook Pro with Mac OS X and either browser. It should handle the loop without unrolling it and load the shader much more quickly (again, this may vary across different video cards).
+
+To execute:
+1) Download demos as a zip file:
+https://github.com/robertsdionne/demos/zipball/master
+
+2) Unzip demos.
+
+3) Open file:///path/to/ray.html in your browser.
