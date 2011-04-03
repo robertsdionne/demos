@@ -23,33 +23,36 @@
     </script>
     <script id="f" type="x-shader/x-fragment">
       uniform bool debug;
+      uniform bool eyeTrackingLod;
       uniform int distanceFn;
       uniform lowp vec3 translate;
       varying lowp vec3 ray;
 
       lowp float distance(lowp vec3 pos);
       lowp vec3 rotateY(lowp vec3 pos, lowp float a);
-      lowp vec3 rotate(lowp vec3 pos, lowp float theta, lowp vec3 u);
+      lowp mat3 rotation(lowp float theta, lowp vec3 u);
 
       lowp float r = 0.22;
       lowp float R = 0.5;
       void main() {
         lowp vec3 pos = vec3(0);
         lowp vec3 dir = normalize(ray);
-        lowp float eps = 0.002;//1.001 - dot(dir, vec3(0.0, 0.0, -1.0));
+        lowp float eps;
+        if (eyeTrackingLod) {
+          eps = 1.001 - dot(dir, vec3(0.0, 0.0, -1.0));
+        } else {
+          eps = 0.002;
+        }
         bool hit = false;
         highp float count = 0.0;
         lowp vec3 p;
         lowp vec3 cr = cross(vec3(0.0, 0.0, -1.0), dir);
-            //normalize(vec3(-0.5, 0.0, -4.0)));
         lowp vec3 n = normalize(cr);
         highp float th = asin(length(cr));
-        for (int i = 0; i < 1000; ++i) {
-          lowp vec3 q = pos;
-          lowp float a = 1000.0;
-          q.x /= a;
-          q.y /= a;
-          p = rotate(q, th, n)-translate;
+        lowp mat3 r = rotation(th, n);
+        lowp vec3 d = vec3(1000.,1000.,1.);
+        for(int i = 0; i < 100; ++i) {
+          p = r*(pos/d)-translate;
           lowp float dist = distance(p);
           if (length(pos) > 100.0) {
             break;
@@ -98,7 +101,7 @@
           if (debug) {
             gl_FragColor = vec4(0., count, 0., 1.);
           } else {
-           discard;
+            discard;
          }
         }
       }
@@ -113,8 +116,8 @@
       lowp float column(lowp vec3 pos);
       lowp float columnTwo(lowp vec3 pos);
 
-      lowp float rectangularPrism(lowp vec3 pos, lowp vec3 pos);
-      lowp float twistedRectangularPrism(lowp vec3 pos, lowp vec3 pos);
+      lowp float rectangularPrism(lowp vec3 pos, lowp vec3 size);
+      lowp float twistedRectangularPrism(lowp vec3 pos, lowp vec3 size);
       lowp vec3 scale(lowp vec3 pos);
 
       lowp float both(lowp vec3 pos) {
@@ -209,7 +212,7 @@
         return s * pos;
       }
 
-      lowp vec3 rotate(lowp vec3 pos, lowp float theta, lowp vec3 u) {
+      lowp mat3 rotation(lowp float theta, lowp vec3 u) {
         lowp mat3 r = mat3(0.0);
         r[0][0] = cos(theta)+u.x*u.x*(1.0-cos(theta));
         r[0][1] = u.y*u.x*(1.0-cos(theta))+u.z*sin(theta);
@@ -220,7 +223,7 @@
         r[2][0] = u.x*u.z*(1.0-cos(theta))+u.y*sin(theta);
         r[2][1] = u.y*u.z*(1.0-cos(theta))-u.x*sin(theta);
         r[2][2] = cos(theta)+u.z*u.z*(1.0-cos(theta));
-        return r * pos;
+        return r;
       }
 
       lowp vec3 rotateY(lowp vec3 pos, lowp float a) {
@@ -249,8 +252,9 @@
       <tr><th>Shape Selection</th></tr>
       <tr><td><b>n</b></td><td>Next shape.</td></tr>
       <tr><td><b>p</b></td><td>Previous shape.</td></tr>
-      <tr><th>Debug Mode (loop iterations per fragment)</th></tr>
-      <tr><td><b>y</b></td><td>Toggle.</td></tr>
+      <tr><th>Debug Modes</th></tr>
+      <tr><td><b>y</b></td><td>Toggle loops per fragment display.</td></tr>
+      <tr><td><b>u</b></td><td>Toggle "eye tracker" level-of-detail display.</td></tr>
     </table>
   </body>
 </html>

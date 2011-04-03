@@ -21,7 +21,7 @@ ray.load = function() {
     }
     update();
     onDraw(gl, p, b);
-  }, 10);
+  }, 1000/60);
 };
 
 var MAX_FN_INDEX = 8;
@@ -30,6 +30,7 @@ var X = 0;
 var Y = 0;
 var Z = -5;
 var debug = false;
+var eyeTrackingLod = false;
 var distanceFn = 0;
 
 
@@ -55,6 +56,9 @@ var update = function() {
   if (keys.justPressed(ray.Key.Y)) {
     debug = !debug;
   }
+  if (keys.justPressed(ray.Key.U)) {
+    eyeTrackingLod = !eyeTrackingLod;
+  }
   if (keys.justPressed(ray.Key.N)) {
     if (distanceFn < MAX_FN_INDEX) {
       ++distanceFn;
@@ -73,12 +77,11 @@ var update = function() {
 };
 
 var onCreate = function(gl, p, b) {
-  gl.clearColor(0.2, 0.2, 0.2, 1.0);
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.enable(gl.CULL_FACE);
   gl.enable(gl.DEPTH_TEST);
   var v = gl.createShader(gl.VERTEX_SHADER);
   gl.shaderSource(v, document.getElementById('v').text);
-  var result = gl.compileShader(v);
   gl.compileShader(v);
   if (!gl.getShaderParameter(v, gl.COMPILE_STATUS)) {
     throw new Error(gl.getShaderInfoLog(v));
@@ -94,12 +97,16 @@ var onCreate = function(gl, p, b) {
   gl.attachShader(p, f);
   gl.deleteShader(f); f = null;
   gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+    throw new Error(gl.getProgramInfoLog(p));
+  }
   gl.useProgram(p);
 
   p.position = gl.getAttribLocation(p, 'position');
 
   p.translate = gl.getUniformLocation(p, 'translate');
   p.debug = gl.getUniformLocation(p, 'debug');
+  p.eyeTrackingLod = gl.getUniformLocation(p, 'eyeTrackingLod');
   p.distanceFn = gl.getUniformLocation(p, 'distanceFn');
 
   var data = [
@@ -165,6 +172,7 @@ var onDraw = function(gl, p, b) {
 
   gl.uniform3fv(p.translate, new Float32Array([X, Y, Z]));
   gl.uniform1i(p.debug, debug);
+  gl.uniform1i(p.eyeTrackingLod, eyeTrackingLod);
   gl.uniform1i(p.distanceFn, distanceFn);
   gl.bindBuffer(gl.ARRAY_BUFFER, b);
   gl.vertexAttribPointer(p.position, 3, gl.FLOAT, false, 0, 0);
