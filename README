@@ -1,7 +1,7 @@
 Demos
 Author: Robert Dionne
 
-Demos is a signed distance field raytracer. It has a debug rendering mode that shows the number of loop iterations per fragment, and an eye-tracker level-of-detail mode that lowers the raytracer accuracy for fragments towards the edges of the screen.
+Demos is a signed distance field raytracer. It has a debug rendering mode that shows the number of loop iterations per fragment, an eye-tracker level-of-detail mode that lowers the raytracer accuracy for fragments towards the edges of the screen and a toggleable mesh intersector mode.
 
 Mac OS X support:
 Google Chrome 10: http://www.google.com/chrome
