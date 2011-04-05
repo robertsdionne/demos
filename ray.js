@@ -2,10 +2,8 @@
 
 var keys = new ray.Keys(document);
 
-
 ray.load = function() {
   var canvas = document.getElementById('c');
-  keys.install();
   canvas.width = 640;
   canvas.height = 640;
   var gl = canvas.getContext('experimental-webgl');
@@ -15,9 +13,10 @@ ray.load = function() {
   var b = gl.createBuffer();
   var t = gl.createTexture();
   var f = gl.createFramebuffer();
-  onCreate(gl, p, q, q2, t, f, b);
   var width, height;
-  window.setInterval(function() {
+  keys.install();
+  onCreate(gl, p, q, q2, t, f, b);
+  window.setTimeout(function draw() {
     if (width !== canvas.width || height !== canvas.height) {
       width = canvas.width;
       height = canvas.height;
@@ -25,6 +24,7 @@ ray.load = function() {
     }
     update();
     onDraw(gl, p, q, q2, t, f, b);
+    window.setTimeout(draw, 1000/60);
   }, 1000/60);
 };
 
