@@ -15,7 +15,10 @@ NOTE: It seems Windows 7 WebGL implementations do not support loop constructs, a
 
 To execute:
 1) Download demos as a zip file:
+a) For mesh intersector support (only works on Mac OS X):
 https://github.com/robertsdionne/demos/zipball/master
+For simpler version (works on Windows 7):
+https://github.com/robertsdionne/demos/zipball/windows7-supported
 
 2) Unzip demos.
 
