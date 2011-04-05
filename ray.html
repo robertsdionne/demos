@@ -84,7 +84,7 @@
           }
           p = pos-translate;
           highp float dist = distance(p);
-          if (dist < max(0.01 * pos.z, eps/2.0)) {
+          if (dist < max(eps * abs(pos.z), eps)) {
             hit = true;
             break;
           }
