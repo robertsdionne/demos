@@ -46,13 +46,8 @@
         bool hit = false;
         highp float count = 0.0;
         lowp vec3 p;
-        lowp vec3 cr = cross(vec3(0.0, 0.0, -1.0), dir);
-        lowp vec3 n = normalize(cr);
-        highp float th = asin(length(cr));
-        lowp mat3 r = rotation(th, n);
-        lowp vec3 d = vec3(1000.,1000.,1.);
         for(int i = 0; i < 100; ++i) {
-          p = r*(pos/d)-translate;
+          p = pos-translate;
           lowp float dist = distance(p);
           if (length(pos) > 100.0) {
             break;
@@ -62,7 +57,7 @@
             break;
           }
           count += 0.02;
-          pos += 0.9 * dir * dist;
+          pos += 0.7 * dir * dist;
         }
         lowp float red = 0.;//1.0-clamp(length(pos) / 100.0, 0.0, 1.0);
         lowp float blue = count;
