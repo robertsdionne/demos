@@ -17,7 +17,7 @@
         p[2][3] = -1.0;
         p[3][2] = -2000.0 / 999.0;
         p[3][3] = 0.0;
-        vec4 d = /*t */ vec4(position, 1);
+        vec4 d = t * vec4(position, 1);
         ray = d.xyz;
         gl_Position = p * d;
       }
@@ -31,6 +31,7 @@
       varying highp vec3 ray;
 
       highp float distance(highp vec3 pos);
+      highp float cull(highp vec3 pos);
       highp vec3 rotateY(highp vec3 pos, highp float a);
       highp mat3 rotation(highp float theta, highp vec3 u);
 
@@ -51,13 +52,13 @@
       highp float r = 0.22;
       highp float R = 0.5;
       void main() {
-        highp vec3 pos = vec3(0);
+        highp vec3 pos = vec3(ray);
         highp vec3 dir = normalize(ray);
         highp float eps;
         if (eyeTrackingLod) {
-          eps = 1.001 - dot(dir, vec3(0.0, 0.0, -1.0));
+          eps = 1.001 - dot(normalize(dir*vec3(.25,.25,1.)), vec3(0.0, 0.0, -1.0));
         } else {
-          eps = 0.002;
+          eps = 0.001;
         }
         bool hit = false;
         highp float count = 0.0;
@@ -72,7 +73,13 @@
         highp vec4 rgbaDepth;
         highp float depth;
         for(int i = 0; i < 100; ++i) {
-          if (length(pos) > 100.0) {
+          if (abs(pos-translate).x > 1.1) {
+            break;
+          }
+          if (abs(pos-translate).y > 1.1) {
+            break;
+          }
+          if (abs(pos-translate).z > 1.1) {
             break;
           }
           texCoord = bias * proj * vec4(pos, 1.);
@@ -83,7 +90,7 @@
             break;
           }
           p = pos-translate;
-          highp float dist = distance(p);
+          highp float dist = cull(p);
           if (dist < max(eps * abs(pos.z), eps)) {
             hit = true;
             break;
@@ -93,14 +100,15 @@
         }
         highp float red = 0.;//1.0-clamp(length(pos) / 100.0, 0.0, 1.0);
         highp float blue = count;
+        highp float u = max(eps * abs(pos.z), eps);
         if (hit) {
-          highp vec3 dx = vec3(0.01, 0.0,  0.0);
-          highp vec3 dy = vec3(0.0,  0.01, 0.0);
-          highp vec3 dz = vec3(0.0,  0.0,  0.01);
+          highp vec3 dx = vec3(u, 0.0,  0.0);
+          highp vec3 dy = vec3(0.0,  u, 0.0);
+          highp vec3 dz = vec3(0.0,  0.0,  u);
           highp vec3 normal = normalize(vec3(
-            distance(p+dx) - distance(p-dx),
-            distance(p+dy) - distance(p-dy),
-            distance(p+dz) - distance(p-dz)));
+            cull(p+dx) - cull(p-dx),
+            cull(p+dy) - cull(p-dy),
+            cull(p+dz) - cull(p-dz)));
           highp vec3 lightdir = pos - vec3(0, 0, -2);
           highp vec3 nlightdir = normalize(lightdir);
           highp vec3 lightdir2 = pos - vec3(4, 0, -5);
@@ -150,6 +158,16 @@
       highp float both(highp vec3 pos) {
         return min(sphere(pos-vec3(1.1, 0.0, 0.0)), cube(pos+vec3(1.1, 0.0, 0.0)));
       }
+
+      highp float cull(highp vec3 pos) {
+        highp float l = dot(pos, vec3(1.,0.,0.))-1.;
+        highp float r = dot(pos, vec3(-1.,0.,0.))-1.;
+        highp float t = dot(pos, vec3(0.,1.,0.))-1.;
+        highp float b = dot(pos, vec3(0.,-1.,0.))-1.;
+        highp float n = dot(pos, vec3(0.,0.,1.))-1.;
+        highp float f = dot(pos, vec3(0.,0.,-1.))-1.;
+        return max(max(max(max(l,r), max(t,b)), max(n, f)), distance(pos));
+      }
       
       highp float distance(highp vec3 pos) {
         if (distanceFn == 0) {
@@ -174,7 +192,6 @@
       }
 
       highp float plane(highp vec3 pos) {
-        pos.y += 1.0;
         return max(dot(pos, vec3(0.0, 1.0, 0.0)),
             dot(pos, vec3(0.0, -1.0, 0.0))-0.01);
       }
@@ -207,6 +224,7 @@
       }
 
       highp float column(highp vec3 pos) {
+        pos.xz = mod(pos.xz, vec2(1.))-vec2(0.5);
         highp float distTop = dot(pos, vec3(0.0, 1.0, 0.0))-2.0;
         highp float distBottom = dot(pos, vec3(0.0, -1.0, 0.0))-2.0;
         highp float theta = atan(pos.z, pos.x);
@@ -222,7 +240,6 @@
       }
 
       highp float disc(highp vec3 pos) {
-        pos.y += 1.0;
         return max(max(dot(pos, vec3(0.0, 1.0, 0.0)),
             length(pos.xz*vec2(1.0,1.0))-1.0),
                 dot(pos, vec3(0.0, -1.0, 0.0))-0.01);
