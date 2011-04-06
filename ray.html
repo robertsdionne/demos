@@ -48,7 +48,7 @@
         return dot(rgbaDepth, bitShift);
       }
 
-      highp float r = 0.22;
+      highp float r = 0.42;
       highp float R = 0.5;
       void main() {
         highp vec3 pos = vec3(0);
@@ -57,7 +57,7 @@
         if (eyeTrackingLod) {
           eps = 1.001 - dot(dir, vec3(0.0, 0.0, -1.0));
         } else {
-          eps = 0.002;
+          eps = 0.001;
         }
         bool hit = false;
         highp float count = 0.0;
@@ -71,7 +71,7 @@
         highp vec4 shadowCoord;
         highp vec4 rgbaDepth;
         highp float depth;
-        for(int i = 0; i < 80; ++i) {
+        for(int i = 0; i < 128; ++i) {
           if (length(pos) > 100.0) {
             break;
           }
@@ -93,14 +93,22 @@
         }
         highp float red = 0.;//1.0-clamp(length(pos) / 100.0, 0.0, 1.0);
         highp float blue = count;
+        highp float u = max(eps * abs(pos.z), eps);
         if (hit) {
-          highp vec3 dx = vec3(0.01, 0.0,  0.0);
-          highp vec3 dy = vec3(0.0,  0.01, 0.0);
-          highp vec3 dz = vec3(0.0,  0.0,  0.01);
+          highp vec3 dx = vec3(u, 0.0, 0.0);
+          highp vec3 dy = vec3(0.0, u, 0.0);
+          highp vec3 dz = vec3(0.0, 0.0, u);
           highp vec3 normal = normalize(vec3(
             distance(p+dx) - distance(p-dx),
             distance(p+dy) - distance(p-dy),
             distance(p+dz) - distance(p-dz)));
+          const highp float k = 5.0;
+          const highp float delta = 0.1;
+          highp float ao = 1.0;
+          for (int i = 0; i < 5; ++i) {
+            highp float j = float(i);
+            ao -= k * pow(2., -j-1.) * (j * delta - distance(p+normal*j*delta));
+          }
           highp vec3 lightdir = pos - vec3(0, 0, -2);
           highp vec3 nlightdir = normalize(lightdir);
           highp vec3 lightdir2 = pos - vec3(4, 0, -5);
@@ -120,13 +128,15 @@
               reflect(nlightdir3, normal)), 0.0, 1.0), 80.0);
           if (debug) {
             gl_FragColor = vec4(0., count, 0., 1.);
+            gl_FragColor = vec4(vec3(ao),1.);
           } else {
-            gl_FragColor = vec4(intensity +intensity3+ spec+spec3,
-                intensity +spec, intensity +intensity2+ spec+spec2, 1.0);
+            gl_FragColor = vec4(max(vec3(intensity +intensity3+ spec+spec3,
+                intensity +spec, intensity +intensity2+ spec+spec2), vec3(ao/5.)), 1.0);
           }
         } else {
           if (debug) {
             gl_FragColor = vec4(0., count, 0., 1.);
+            discard;
           } else {
             discard;
          }
@@ -153,25 +163,29 @@
       }
       
       highp float distance(highp vec3 pos) {
+        highp vec3 q = pos;
+        pos.xz = mod(pos.xz, vec2(2.,5.))-vec2(1.,2.5);
+        highp float distance;
         if (distanceFn == 0) {
-          return temple(pos);
+          distance = plane(pos);
         } else if (distanceFn == 1) {
-          return disc(pos);
+          distance = disc(pos);
         } else if (distanceFn == 2) {
-          return wafer(pos);
+          distance = wafer(pos);
         } else if (distanceFn == 3) {
-          return sphere(pos);
+          distance = sphere(pos);
         } else if (distanceFn == 4) {
-          return torus(pos);
+          distance = torus(pos);
         } else if (distanceFn == 5) {
-          return cube(pos);
+          distance = cube(pos);
         } else if (distanceFn == 6) {
-          return twistedCube(pos);
+          distance = twistedCube(pos);
         } else if (distanceFn == 7) {
-          return columnTwo(pos);
+          distance = columnTwo(pos);
         } else {
-          return column(pos);
+          distance = column(pos);
         }
+        return min(distance, dot(q, vec3(0.,1.,0.))+1.1);
       }
 
       highp float rect(highp vec3 pos) {
@@ -216,13 +230,19 @@
       }
 
       highp float plane(highp vec3 pos) {
-        pos.y += 1.0;
-        return max(dot(pos, vec3(0.0, 1.0, 0.0)),
-            dot(pos, vec3(0.0, -1.0, 0.0))-0.01);
+        highp float distance = 100.0;
+        for (int i = 0; i < 6; ++i) {
+          highp vec3 q = rotateY(pos, 2.*3.14159*float(i)/6.);
+          highp float rr = dot(q.xz, q.xz);
+          q.y -= 0.6*exp2(-10.0*rr);
+          distance = min(distance, max(length(q.zy)-0.1,
+              dot(q, vec3(-1.,0.,0.))));
+        }
+        return min(dot(pos,vec3(0.,1.,0.))+.1, max(distance, length(pos)-1.));
       }
 
       highp float cube(highp vec3 pos) {
-        return rectangularPrism(pos, vec3(0.5));
+        return rectangularPrism(pos, vec3(0.75));
       }
 
       highp float twistedCube(highp vec3 pos) {
@@ -241,14 +261,16 @@
       }
 
       highp float sphere(highp vec3 pos) {
-        return length(pos)-sqrt(0.5);
+        return length(pos)-sqrt(1.);
       }
 
       highp float torus(highp vec3 pos) {
+        pos.y += 0.5;
         return length(vec2(length(pos.xz)-R,pos.y))-r;
       }
 
       highp float column(highp vec3 pos) {
+        pos.y -= .5;
         highp float distTop = dot(pos, vec3(0.0, 1.0, 0.0))-2.0;
         highp float distBottom = dot(pos, vec3(0.0, -1.0, 0.0))-2.0;
         highp float theta = atan(pos.z, pos.x);
