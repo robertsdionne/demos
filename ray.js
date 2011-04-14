@@ -30,10 +30,10 @@ ray.load = function() {
 
 var MAX_FN_INDEX = 8;
 
-var dS = 0.01;
+var dS = 0.05;
 var X = 0;
 var Y = 0;
-var Z = -1;
+var Z = -4;
 var prevTick = +new Date();
 var T = 0;
 var debug = false;
@@ -282,7 +282,7 @@ var onDraw = function(gl, p, q, q2, t, f, b) {
   }
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  gl.clearColor(0.2, 0.2, 0.2, 1.0);
+  gl.clearColor(0.1, 0.1, 0.1, 1.0);
   gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
   if (intersector) {
