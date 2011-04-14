@@ -30,9 +30,12 @@ ray.load = function() {
 
 var MAX_FN_INDEX = 8;
 
+var dS = 0.01;
 var X = 0;
 var Y = 0;
-var Z = -3;
+var Z = -1;
+var prevTick = +new Date();
+var T = 0;
 var debug = false;
 var eyeTrackingLod = false;
 var intersector = false;
@@ -40,23 +43,26 @@ var distanceFn = 0;
 
 
 var update = function() {
+  var tick = +new Date();
+  T += (tick - prevTick) / 1000;
+  prevTick = tick;
   if (keys.isPressed(ray.Key.W)) {
-    Y += 0.1;
+    Y += dS;
   }
   if (keys.isPressed(ray.Key.S)) {
-    Y -= 0.1;
+    Y -= dS;
   }
   if (keys.isPressed(ray.Key.A)) {
-    X -= 0.1;
+    X -= dS;
   }
   if (keys.isPressed(ray.Key.D)) {
-    X += 0.1;
+    X += dS;
   }
   if (keys.isPressed(ray.Key.Z)) {
-    Z += 0.1;
+    Z += dS;
   }
   if (keys.isPressed(ray.Key.Q)) {
-    Z -= 0.1;
+    Z -= dS;
   }
   if (keys.justPressed(ray.Key.Y)) {
     debug = !debug;
@@ -121,6 +127,7 @@ var onCreate = function(gl, p, q, q2, t, f, b) {
   p.debug = gl.getUniformLocation(p, 'debug');
   p.eyeTrackingLod = gl.getUniformLocation(p, 'eyeTrackingLod');
   p.distanceFn = gl.getUniformLocation(p, 'distanceFn');
+  p.t = gl.getUniformLocation(p, 't');
 
   q.uProject = gl.getUniformLocation(q, 'uProject');
   q.uTransform = gl.getUniformLocation(q, 'uTransform');
@@ -297,6 +304,7 @@ var onDraw = function(gl, p, q, q2, t, f, b) {
   gl.uniform1i(p.debug, debug);
   gl.uniform1i(p.eyeTrackingLod, eyeTrackingLod);
   gl.uniform1i(p.distanceFn, distanceFn);
+  gl.uniform1f(p.t, T);
   gl.bindBuffer(gl.ARRAY_BUFFER, b);
   gl.vertexAttribPointer(p.position, 3, gl.FLOAT, false, 24, 0);
   gl.enableVertexAttribArray(p.position);
