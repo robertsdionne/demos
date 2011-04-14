@@ -103,11 +103,12 @@
             distance(p+dy) - distance(p-dy),
             distance(p+dz) - distance(p-dz)));
           const highp float k = 5.0;
-          const highp float delta = 0.1;
+          const highp float delta = 0.05;
+          highp vec3 n = normalize(normal + 1.*vec3(1.,1.,-1.)/1.);
           highp float ao = 1.0;
-          for (int i = 0; i < 5; ++i) {
+          for (int i = 0; i < 10; ++i) {
             highp float j = float(i);
-            ao -= k * pow(2., -j-1.) * (j * delta - distance(p+normal*j*delta));
+            ao -= k * pow(2., -j-1.) * (j * delta - distance(p+n*j*delta));
           }
           highp vec3 lightdir = pos - vec3(0, 0, -2);
           highp vec3 nlightdir = normalize(lightdir);
@@ -163,11 +164,11 @@
       }
       
       highp float distance(highp vec3 pos) {
-        highp vec3 q = pos;
-        pos.xz = mod(pos.xz, vec2(2.,5.))-vec2(1.,2.5);
+//      highp vec3 q = pos;
+//      pos.xz = mod(pos.xz, vec2(2.,5.))-vec2(1.,2.5);
         highp float distance;
         if (distanceFn == 0) {
-          distance = plane(pos);
+          distance = temple(pos);
         } else if (distanceFn == 1) {
           distance = disc(pos);
         } else if (distanceFn == 2) {
@@ -185,7 +186,7 @@
         } else {
           distance = column(pos);
         }
-        return min(distance, dot(q, vec3(0.,1.,0.))+1.1);
+        return distance;//min(distance, dot(q, vec3(0.,1.,0.))+1.1);
       }
 
       highp float rect(highp vec3 pos) {
@@ -270,7 +271,7 @@
       }
 
       highp float column(highp vec3 pos) {
-        pos.y -= .5;
+        //pos.y -= .5;
         highp float distTop = dot(pos, vec3(0.0, 1.0, 0.0))-2.0;
         highp float distBottom = dot(pos, vec3(0.0, -1.0, 0.0))-2.0;
         highp float theta = atan(pos.z, pos.x);
