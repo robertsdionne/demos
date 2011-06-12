@@ -282,7 +282,7 @@ var onDraw = function(gl, p, q, q2, t, f, b) {
   }
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  gl.clearColor(0.1, 0.1, 0.1, 1.0);
+  gl.clearColor(0.125, 0.125, 0.125, 1.0);
   gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
 
   if (intersector) {

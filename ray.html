@@ -1,6 +1,11 @@
 <!-- Copyright 2010 Robert Scott Dionne. All Rights Reserved. -->
 <html>
   <head>
+    <style type="text/css">
+      body {
+        background-color:#111;
+      }
+    </style>
     <script src="base.js" type="application/javascript"></script>
     <script id="v0" type="x-shader/x-vertex">
       uniform vec3 translate;
@@ -135,7 +140,7 @@
               //reflect(nlightdir3, normal)), 0.0, 1.0), 80.0);
           if (debug) {
             gl_FragColor = vec4(0., count, 0., 1.);
-            gl_FragColor = vec4(vec3(ao),1.);
+            //gl_FragColor = vec4(vec3(ao),1.);
           } else {
             gl_FragColor = vec4(vec3(intensity +intensity3+ spec+spec3,
                 intensity +spec, intensity +intensity2+ spec+spec2), 1.0);
@@ -143,7 +148,6 @@
         } else {
           if (debug) {
             gl_FragColor = vec4(0., count, 0., 1.);
-            discard;
           } else {
             discard;
          }
@@ -230,14 +234,14 @@
         highp vec3 lightpos = vec3(0, 1.5*sin(t/2.), 1.+1.5*sin(t/4.));
         highp float sphere = length(pos-lightpos)-.025;
         pos.x += t;
-        highp float distBack = dot(pos, vec3(0.0, 0.0, 1.0))+1.;
+        //highp float distBack = dot(pos, vec3(0.0, 0.0, 1.0))-1.;
         highp float distFront = dot(pos, vec3(0.0, -0.0, -1.0))-4.0;
         highp float base = base(pos);
         highp float top = top(pos);
         highp float roof = roof(pos);
         pos.x = mod(pos.x, 1.5) - 0.75;
         return min(min(min(base, column(pos)), min(top, roof)),
-            min(distBack, sphere));
+            sphere);
 //      pos.y += 2.0;
 //      highp float factor = 50.;
 //      highp float floor = dot(pos, vec3(0.0, 1.0, 0.0));
@@ -282,7 +286,8 @@
       }
 
       highp float sphere(highp vec3 pos) {
-        return length(pos)-sqrt(1.+sin(t)*(sin(t)));
+        highp float len = length(translate-vec3(0.,0.,1.));
+        return length(pos-translate/len)-sqrt(1./len);
       }
 
       highp float torus(highp vec3 pos) {
