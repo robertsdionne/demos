@@ -39,7 +39,7 @@ var T = 0;
 var debug = false;
 var eyeTrackingLod = false;
 var intersector = false;
-var distanceFn = 0;
+var distanceFn = 3;
 
 
 var update = function() {
