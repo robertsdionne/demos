@@ -4,8 +4,8 @@ var keys = new ray.Keys(document);
 
 ray.load = function() {
   var canvas = document.getElementById('c');
-  canvas.width = 640;
-  canvas.height = 640;
+  canvas.width = 512;
+  canvas.height = 512;
   var gl = canvas.getContext('experimental-webgl');
   var p = gl.createProgram();
   var q = gl.createProgram();
@@ -30,13 +30,14 @@ ray.load = function() {
 
 var MAX_FN_INDEX = 8;
 
-var dS = 0.05;
+var factor = 50.0;
+var dS = 0.5;
 var X = 0;
 var Y = 0;
-var Z = -4;
+var Z = -150;
 var prevTick = +new Date();
 var T = 0;
-var debug = false;
+var debug = true;
 var eyeTrackingLod = false;
 var intersector = false;
 var distanceFn = 3;
@@ -47,22 +48,38 @@ var update = function() {
   T += (tick - prevTick) / 1000;
   prevTick = tick;
   if (keys.isPressed(ray.Key.W)) {
+    var len = Math.sqrt(X*X+Y*Y+Z*Z);
+    factor = len - 100;
     Y += dS;
   }
   if (keys.isPressed(ray.Key.S)) {
+    var len = Math.sqrt(X*X+Y*Y+Z*Z);
+    factor = len - 100;
     Y -= dS;
   }
   if (keys.isPressed(ray.Key.A)) {
+    var len = Math.sqrt(X*X+Y*Y+Z*Z);
+    factor = len - 100;
     X -= dS;
   }
   if (keys.isPressed(ray.Key.D)) {
+    var len = Math.sqrt(X*X+Y*Y+Z*Z);
+    factor = len - 100;
     X += dS;
   }
   if (keys.isPressed(ray.Key.Z)) {
-    Z += dS;
+    factor *= 1.05;
+    var len = Math.sqrt(X*X+Y*Y+Z*Z);
+    X = 100*X/len + X * factor/len;
+    Y = 100*Y/len + Y * factor/len;
+    Z = 100*Z/len + Z * factor/len;
   }
   if (keys.isPressed(ray.Key.Q)) {
-    Z -= dS;
+    factor /= 1.05;
+    var len = Math.sqrt(X*X+Y*Y+Z*Z);
+    X = 100*X/len + X * factor/len;
+    Y = 100*Y/len + Y * factor/len;
+    Z = 100*Z/len + Z * factor/len;
   }
   if (keys.justPressed(ray.Key.Y)) {
     debug = !debug;
