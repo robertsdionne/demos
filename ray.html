@@ -3,6 +3,10 @@
   <head>
     <script src="base.js" type="application/javascript"></script>
     <script id="v0" type="x-shader/x-vertex">
+
+      precision highp float;
+        
+
       uniform vec3 translate;
       attribute vec3 position;
       varying vec3 ray;
@@ -23,6 +27,10 @@
       }
     </script>
     <script id="f0" type="x-shader/x-fragment">
+    
+      precision highp float;
+        
+
       uniform sampler2D uTexture;
       uniform bool debug;
       uniform bool eyeTrackingLod;
@@ -296,6 +304,8 @@
       }
     </script>
     <script id="f1" type="x-shader/x-vertex">
+      precision highp float;
+    
       varying highp vec4 vPosition;
       varying highp vec4 vNormal;
 
@@ -324,6 +334,8 @@
       }
     </script>
     <script id="f2" type="x-shader/x-fragment">
+    precision highp float;
+    
       // Depth packing function and constants adapted from
       // SpiderGL Example 6: Shadow Mapping:
       // http://spidergl.org/example.php?id=6
