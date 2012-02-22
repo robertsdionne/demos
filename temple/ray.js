@@ -33,8 +33,8 @@ var MAX_FN_INDEX = 8;
 var X = 0;
 var Y = 0;
 var Z = -3;
-var debug = false;
-var eyeTrackingLod = true;
+var debug = true;
+var eyeTrackingLod = false;
 var intersector = false;
 var distanceFn = 0;
 
