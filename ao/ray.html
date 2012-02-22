@@ -1,0 +1,418 @@
+<!-- Copyright 2010 Robert Scott Dionne. All Rights Reserved. -->
+<html>
+  <head>
+    <script src="base.js" type="application/javascript"></script>
+    <script id="v0" type="x-shader/x-vertex">
+      precision mediump float;
+      uniform vec3 translate;
+      attribute vec3 position;
+      varying vec3 ray;
+
+      void main() {
+        mat4 t = mat4(1.0);
+        t[3][0] = translate.x;
+        t[3][1] = translate.y;
+        t[3][2] = translate.z;
+        mat4 p = mat4(1.0);
+        p[2][2] = -1001.0 / 999.0;
+        p[2][3] = -1.0;
+        p[3][2] = -2000.0 / 999.0;
+        p[3][3] = 0.0;
+        vec4 d = /*t */ vec4(position, 1);
+        ray = d.xyz;
+        gl_Position = p * d;
+      }
+    </script>
+    <script id="f0" type="x-shader/x-fragment">
+      precision mediump float;
+      uniform sampler2D uTexture;
+      uniform bool debug;
+      uniform bool eyeTrackingLod;
+      uniform int distanceFn;
+      uniform highp vec3 translate;
+      varying highp vec3 ray;
+
+      highp float distance(highp vec3 pos);
+      highp vec3 rotateY(highp vec3 pos, highp float a);
+      highp mat3 rotation(highp float theta, highp vec3 u);
+
+      highp mat4 bias = mat4(0.5, 0.0, 0.0, 0.0,
+                       0.0, 0.5, 0.0, 0.0,
+                       0.0, 0.0, 0.5, 0.0,
+                       0.5, 0.5, 0.5, 1.0);
+
+      // Depth unpacking function and constants adapted from
+      // SpiderGL Example 6: Shadow Mapping:
+      // http://spidergl.org/example.php?id=6
+      float unpackDepth(vec4 rgbaDepth) {
+        highp vec4 bitShift = vec4(1./(256.*256.*256.),
+            1./(256.*256.), 1./256., 1.);
+        return dot(rgbaDepth, bitShift);
+      }
+
+      highp float r = 0.42;
+      highp float R = 0.5;
+      void main() {
+        highp vec3 pos = vec3(0);
+        highp vec3 dir = normalize(ray);
+        highp float eps;
+        if (eyeTrackingLod) {
+          eps = 1.001 - dot(dir, vec3(0.0, 0.0, -1.0));
+        } else {
+          eps = 0.001;
+        }
+        bool hit = false;
+        highp float count = 0.0;
+        highp vec3 p;
+        highp mat4 proj = mat4(1.0);
+        proj[2][2] = -1001.0 / 999.0;
+        proj[2][3] = -1.0;
+        proj[3][2] = -2000.0 / 999.0;
+        proj[3][3] = 0.0;
+        highp vec4 texCoord;
+        highp vec4 shadowCoord;
+        highp vec4 rgbaDepth;
+        highp float depth;
+        for(int i = 0; i < 128; ++i) {
+          if (length(pos) > 100.0) {
+            break;
+          }
+          texCoord = bias * proj * vec4(pos, 1.);
+          shadowCoord = texCoord/texCoord.w;
+          rgbaDepth = texture2DProj(uTexture, texCoord);
+          depth = unpackDepth(rgbaDepth);
+          if (depth < shadowCoord.z) {
+            break;
+          }
+          p = pos-translate;
+          highp float dist = distance(p);
+          if (dist < max(eps * abs(pos.z), eps)) {
+            hit = true;
+            break;
+          }
+          count += 0.02;
+          pos += 0.7 * dir * dist;
+        }
+        highp float red = 0.;//1.0-clamp(length(pos) / 100.0, 0.0, 1.0);
+        highp float blue = count;
+        highp float u = max(eps * abs(pos.z), eps);
+        if (hit) {
+          highp vec3 dx = vec3(u, 0.0, 0.0);
+          highp vec3 dy = vec3(0.0, u, 0.0);
+          highp vec3 dz = vec3(0.0, 0.0, u);
+          highp vec3 normal = normalize(vec3(
+            distance(p+dx) - distance(p-dx),
+            distance(p+dy) - distance(p-dy),
+            distance(p+dz) - distance(p-dz)));
+          const highp float k = 5.0;
+          const highp float delta = 0.1;
+          highp vec3 n = normalize(normal + 1.*vec3(1.,1.,-1.)/1.);
+          highp float ao = 1.0;
+          for (int i = 0; i < 10; ++i) {
+            highp float j = float(i);
+            ao -= k * pow(2., -j-1.) * (j * delta - distance(p+n*j*delta));
+          }
+          highp vec3 lightdir = pos - vec3(0, 0, -2);
+          highp vec3 nlightdir = normalize(lightdir);
+          highp vec3 lightdir2 = pos - vec3(4, 0, -5);
+          highp vec3 nlightdir2 = normalize(lightdir2);
+          highp vec3 lightdir3 = pos - vec3(-4, 0, -5);
+          highp vec3 nlightdir3 = normalize(lightdir3);
+          highp float intensity = clamp(-dot(nlightdir, normal), 0.0, 1.0);
+          highp float intensity2 = clamp(-dot(nlightdir2, normal)/
+              length(lightdir2), 0.0, 1.0);
+          highp float intensity3 = clamp(-dot(nlightdir3, normal)/
+              length(lightdir3), 0.0, 1.0);
+          highp float spec =pow(clamp(-dot(normalize(dir),
+              reflect(nlightdir, normal)), 0.0, 1.0), 80.0);
+          highp float spec2 =pow(clamp(-dot(normalize(dir),
+              reflect(nlightdir2, normal)), 0.0, 1.0), 80.0);
+          highp float spec3 =pow(clamp(-dot(normalize(dir),
+              reflect(nlightdir3, normal)), 0.0, 1.0), 80.0);
+          if (debug) {
+            gl_FragColor = vec4(0., count, 0., 1.);
+            gl_FragColor = vec4(vec3(ao),1.);
+          } else {
+            gl_FragColor = vec4(max(vec3(intensity +intensity3+ spec+spec3,
+                intensity +spec, intensity +intensity2+ spec+spec2), vec3(ao/5.)), 1.0);
+          }
+        } else {
+          if (debug) {
+            gl_FragColor = vec4(0., count, 0., 1.);
+            discard;
+          } else {
+            discard;
+         }
+        }
+      }
+
+      highp float plane(highp vec3 pos);
+      highp float temple(highp vec3 pos);
+      highp float sphere(highp vec3 pos);
+      highp float disc(highp vec3 pos);
+      highp float wafer(highp vec3 pos);
+      highp float torus(highp vec3 pos);
+      highp float cube(highp vec3 pos);
+      highp float twistedCube(highp vec3 pos);
+      highp float column(highp vec3 pos);
+      highp float columnTwo(highp vec3 pos);
+
+      highp float rectangularPrism(highp vec3 pos, highp vec3 size);
+      highp float twistedRectangularPrism(highp vec3 pos, highp vec3 size);
+      highp vec3 scale(highp vec3 pos);
+
+      highp float both(highp vec3 pos) {
+        return min(sphere(pos-vec3(1.1, 0.0, 0.0)), cube(pos+vec3(1.1, 0.0, 0.0)));
+      }
+      
+      highp float distance(highp vec3 pos) {
+        highp vec3 q = pos;
+        pos.xz = mod(pos.xz, vec2(2.,5.))-vec2(1.,2.5);
+        highp float distance;
+        if (distanceFn == 0) {
+          distance = plane(pos);
+        } else if (distanceFn == 1) {
+          distance = disc(pos);
+        } else if (distanceFn == 2) {
+          distance = wafer(pos);
+        } else if (distanceFn == 3) {
+          distance = sphere(pos);
+        } else if (distanceFn == 4) {
+          distance = torus(pos);
+        } else if (distanceFn == 5) {
+          distance = cube(pos);
+        } else if (distanceFn == 6) {
+          distance = twistedCube(pos);
+        } else if (distanceFn == 7) {
+          distance = columnTwo(pos);
+        } else {
+          distance = column(pos);
+        }
+        return min(distance, dot(q, vec3(0.,1.,0.))+1.1);
+      }
+
+      highp float rect(highp vec3 pos) {
+        highp float distBack = dot(pos, vec3(0.0, 0.0, 1.0))-1.0;
+        highp float distFront = dot(pos, vec3(0.0, -0.0, -1.0))-1.0;
+        highp float distTop = dot(pos, vec3(0.0, 1.0, 0.0));
+        highp float distBottom = dot(pos, vec3(0.0, -1.0, 0.0))-0.5;
+        return max(max(distBack, distFront), max(distTop, distBottom));
+      }
+
+      highp float base(highp vec3 pos) {
+        pos.y += 2.0;
+        return rect(pos);
+      }
+
+      highp float top(highp vec3 pos) {
+        pos.y -= 2.5;
+        return rect(pos);
+      }
+
+      highp float roof(highp vec3 pos) {
+        pos.y -= 3.1;
+        //pos.x += translate.x;
+        pos.x = mod(pos.x, 6.)-3.;
+        highp float distBack = dot(pos, vec3(0.0, 0.0, 1.0))-1.0;
+        highp float distFront = dot(pos, vec3(0.0, -0.0, -1.0))-1.0;
+        highp float distTop1 = dot(pos, normalize(vec3(1.0, 6.0, 0.0)));
+        highp float distTop2 = dot(pos, normalize(vec3(-1.0, 6.0, 0.0)));
+        highp float distBottom = dot(pos, vec3(0.0, -1.0, 0.0))-0.5;
+        return max(max(max(distBack, distFront), distTop1),
+            max(distTop2, distBottom));
+      }
+
+      highp float temple(highp vec3 pos) {
+        highp float distBack = dot(pos, vec3(0.0, 0.0, 1.0))-4.0;
+        highp float distFront = dot(pos, vec3(0.0, -0.0, -1.0))-4.0;
+        highp float base = base(pos);
+        highp float top = top(pos);
+        highp float roof = roof(pos);
+        pos.x = mod(pos.x, 1.5) - 0.75;
+        return min(min(base, column(pos)), min(top, roof));
+      }
+
+      highp float plane(highp vec3 pos) {
+        highp float distance = 100.0;
+        for (int i = 0; i < 6; ++i) {
+          highp vec3 q = rotateY(pos, 2.*3.14159*float(i)/6.);
+          highp float rr = dot(q.xz, q.xz);
+          q.y -= 0.6*exp2(-10.0*rr);
+          distance = min(distance, max(length(q.zy)-0.1,
+              dot(q, vec3(-1.,0.,0.))));
+        }
+        return min(dot(pos,vec3(0.,1.,0.))+.1, max(distance, length(pos)-1.));
+      }
+
+      highp float cube(highp vec3 pos) {
+        return rectangularPrism(pos, vec3(0.75));
+      }
+
+      highp float twistedCube(highp vec3 pos) {
+        return twistedRectangularPrism(pos, vec3(0.5));
+      }
+
+      highp float rectangularPrism(highp vec3 pos, highp vec3 size) {
+        highp vec3 dist = abs(pos) - size;
+        return min(max(max(dist.x, dist.y), dist.z),
+            length(max(dist, 0.0)));
+      }
+
+      highp float twistedRectangularPrism(highp vec3 pos, highp vec3 size) {
+        pos = rotateY(pos, 2. * pos.y);
+        return rectangularPrism(pos, size);
+      }
+
+      highp float sphere(highp vec3 pos) {
+        return length(pos)-sqrt(1.);
+      }
+
+      highp float torus(highp vec3 pos) {
+        pos.y += 0.5;
+        return length(vec2(length(pos.xz)-R,pos.y))-r;
+      }
+
+      highp float column(highp vec3 pos) {
+        pos.y -= .5;
+        highp float distTop = dot(pos, vec3(0.0, 1.0, 0.0))-2.0;
+        highp float distBottom = dot(pos, vec3(0.0, -1.0, 0.0))-2.0;
+        highp float theta = atan(pos.z, pos.x);
+        highp float distCyl = length(pos.xz)-0.25;
+        distCyl -= 1.0/16.0-(pos.y/8.0)*(pos.y/8.0);
+        highp float a = ((mod(12.0*theta/3.14159+0.5,1.0))-0.5);
+        distCyl -= 0.05*a*a;
+        return max(max(distTop, distBottom), distCyl);
+      }
+
+      highp float columnTwo(highp vec3 pos) {
+        return twistedRectangularPrism(pos, vec3(0.5, 2.0, 0.5));
+      }
+
+      highp float disc(highp vec3 pos) {
+        pos.y += 1.0;
+        return max(max(dot(pos, vec3(0.0, 1.0, 0.0)),
+            length(pos.xz*vec2(1.0,1.0))-1.0),
+                dot(pos, vec3(0.0, -1.0, 0.0))-0.01);
+      }
+
+      highp float wafer(highp vec3 pos) {
+        pos.y += sin(pos.x * 40.0)/100.;
+        return disc(pos);
+      }
+
+      highp vec3 scale(highp vec3 pos) {
+        highp mat3 s = mat3(1.0);
+        s[0][0] = 0.5;
+        return s * pos;
+      }
+
+      highp mat3 rotation(highp float theta, highp vec3 u) {
+        highp mat3 r = mat3(0.0);
+        r[0][0] = cos(theta)+u.x*u.x*(1.0-cos(theta));
+        r[0][1] = u.y*u.x*(1.0-cos(theta))+u.z*sin(theta);
+        r[0][2] = u.z*u.x*(1.0-cos(theta))-u.y*sin(theta);
+        r[1][0] = u.x*u.y*(1.0-cos(theta))-u.z*sin(theta);
+        r[1][1] = cos(theta)+u.y*u.y*(1.0-cos(theta));
+        r[1][2] = u.z*u.y*(1.0-cos(theta))+u.x*sin(theta);
+        r[2][0] = u.x*u.z*(1.0-cos(theta))+u.y*sin(theta);
+        r[2][1] = u.y*u.z*(1.0-cos(theta))-u.x*sin(theta);
+        r[2][2] = cos(theta)+u.z*u.z*(1.0-cos(theta));
+        return r;
+      }
+
+      highp vec3 rotateY(highp vec3 pos, highp float a) {
+        highp mat3 r = mat3(1);
+        r[0][0] = cos(a);
+        r[2][0] = sin(a);
+        r[0][2] = -sin(a);
+        r[2][2] = cos(a);
+        return r * pos;
+      }
+    </script>
+    <script id="v1" type="x-shader/x-vertex">
+      precision mediump float;
+      uniform mat4 uProject;
+      uniform mat4 uTransform;
+
+      attribute vec4 aPosition;
+      attribute vec3 aNormal;
+
+      varying vec4 vPosition;
+      varying vec4 vNormal;
+
+      void main() {
+        vPosition = uTransform * aPosition;
+        vNormal = uTransform * vec4(aNormal, 0);
+        gl_Position = uProject * uTransform * aPosition;
+      }
+    </script>
+    <script id="f1" type="x-shader/x-vertex">
+      precision mediump float;
+      varying highp vec4 vPosition;
+      varying highp vec4 vNormal;
+
+      void main() {
+        highp vec3 pos = vPosition.xyz/vPosition.w;
+        highp vec3 dir = pos - vec3(0.);
+        highp vec3 lightdir = pos - vec3(0, 0, -2);
+        highp vec3 nlightdir = normalize(lightdir);
+        highp vec3 lightdir2 = pos - vec3(4, 0, 5);
+        highp vec3 nlightdir2 = normalize(lightdir2);
+        highp vec3 lightdir3 = pos - vec3(-4, 0, -5);
+        highp vec3 nlightdir3 = normalize(lightdir3);
+        highp float intensity = clamp(-dot(nlightdir, vNormal.xyz), 0.0, 1.0);
+        highp float intensity2 = clamp(-dot(nlightdir2, vNormal.xyz)/
+            length(lightdir2), 0.0, 1.0);
+        highp float intensity3 = clamp(-dot(nlightdir3, vNormal.xyz)/
+            length(lightdir3), 0.0, 1.0);
+        highp float spec =pow(clamp(-dot(normalize(dir),
+            reflect(nlightdir, vNormal.xyz)), 0.0, 1.0), 80.0);
+        highp float spec2 =pow(clamp(-dot(normalize(dir),
+            reflect(nlightdir2, vNormal.xyz)), 0.0, 1.0), 80.0);
+        highp float spec3 =pow(clamp(-dot(normalize(dir),
+            reflect(nlightdir3, vNormal.xyz)), 0.0, 1.0), 80.0);
+        gl_FragColor = vec4(intensity +intensity3+ spec+spec3,
+            intensity +spec, intensity +intensity2+ spec+spec2, 1.0);
+      }
+    </script>
+    <script id="f2" type="x-shader/x-fragment">
+      precision mediump float;
+      // Depth packing function and constants adapted from
+      // SpiderGL Example 6: Shadow Mapping:
+      // http://spidergl.org/example.php?id=6
+      vec4 packDepth(float depth) {
+        highp vec4 bitShift = vec4(256.*256.*256., 256.*256., 256., 1.);
+        highp vec4 bitMask = vec4(0., 1./256., 1./256., 1./256.);
+        highp vec4 result = fract(depth * bitShift);
+        result -= result.xxyz * bitMask;
+        return result;
+      }
+
+      void main() {
+        gl_FragColor = packDepth(gl_FragCoord.z);
+      }
+    </script>
+  </head>
+  <body onload="ray.load();">
+    <div style="float: left;">
+      <canvas id="c"></canvas>
+    </div>
+    <p><b>Controls</b></p>
+    <table>
+      <tr><th>Shape Translation</th></tr>
+      <tr><td><b>d</b></td><td>Positive X.</td></tr>
+      <tr><td><b>a</b></td><td>Negative X.</td></tr>
+      <tr><td><b>w</b></td><td>Positive Y.</td></tr>
+      <tr><td><b>s</b></td><td>Negative Y.</td></tr>
+      <tr><td><b>z</b></td><td>Positive Z.</td></tr>
+      <tr><td><b>q</b></td><td>Negative Z.</td></tr>
+      <tr><th>Shape Selection</th></tr>
+      <tr><td><b>n</b></td><td>Next shape.</td></tr>
+      <tr><td><b>p</b></td><td>Previous shape.</td></tr>
+      <tr><th>Debug Modes</th></tr>
+      <tr><td><b>y</b></td><td>Toggle loops per fragment display.</td></tr>
+      <tr><td><b>u</b></td><td>Toggle "eye tracker" level-of-detail display.</td></tr>
+      <tr><td><b>i</b></td><td>Toggle intersector mesh.</td></tr>
+    </table>
+  </body>
+</html>
