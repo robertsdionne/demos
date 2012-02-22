@@ -34,7 +34,7 @@ var X = 0;
 var Y = 0;
 var Z = -3;
 var debug = false;
-var eyeTrackingLod = false;
+var eyeTrackingLod = true;
 var intersector = false;
 var distanceFn = 0;
 
