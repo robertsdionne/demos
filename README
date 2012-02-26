@@ -1,25 +1,35 @@
-Demos
+Demos Signed-Distance Field Raytracer
 Author: Robert Dionne
 
-Demos is a signed distance field raytracer. It has a debug rendering mode that shows the number of loop iterations per fragment, an eye-tracker level-of-detail mode that lowers the raytracer accuracy for fragments towards the edges of the screen and a toggleable mesh intersector mode.
+Demos is a signed distance field raytracer. See http://en.wikipedia.org/wiki/Signed_distance_function. It has a debug rendering mode that shows the number of loop iterations per fragment, an eye-tracker level-of-detail mode that lowers the raytracer accuracy for fragments towards the edges of the screen and a toggleable mesh intersector mode.
 
-Mac OS X support:
-Google Chrome 10: http://www.google.com/chrome
-Mozilla Firefox 4: http://www.mozilla.com/en-US/firefox/new/
+Requirements:
+1) Macbook Pro running Mac OS X Snow Leopard.
+2a) Google Chrome 17.0.963.56 or better: http://www.google.com/chrome
+  OR
+2b) Mozilla Firefox 10.0.2 or better: http://www.mozilla.com/en-US/firefox/new/
 
-Windows 7 support:
-Google Chrome 10: http://www.google.com/chrome
-Mozilla Firefox 4: http://www.mozilla.com/en-US/firefox/new/
+Running:
+1) Visit http://robertsdionne.github.com/demos/ in Google Chrome 17 or Mozilla Firefox 10.
+2) Select a demonstration to run by clicking the corresponding link:
+  * Simple demonstration with specular and diffuse lighting.
+  * Temple demonstration with approximate ambient occlusion.
+  * Ambient occlusion demonstration with approximate ambient occlusion and "infinite" geometry.
+  * Solar demonstration with Perlin simplex-noise generating the geometry in space and time.
 
-NOTE: It seems Windows 7 WebGL implementations do not support loop constructs, at least for my video card, so they unroll the raytracing step loop while they convert the GLSL to HLSL for DirectX. Since the loop is 100 iterations maximum, this step can take quite a while (~3 minutes). I recommend using Firefox 4 since it happily generates the unrolled shader and compiles it. Chrome 10 can also do it successfully but it will complain with several annoying dialogs. Or better yet, use a Macbook Pro with Mac OS X and either browser. It should handle the loop without unrolling it and load the shader much more quickly (again, this may vary across different video cards).
+Controls:
+  W - Move shape up.
+  S - Move shape down.
+  A - Move shape left.
+  D - Move shape right.
+  Q - Move shape away.
+  Z - Move shape toward.
 
-To execute:
-1) Download demos as a zip file:
-a) For mesh intersector support (only works on Mac OS X):
-https://github.com/robertsdionne/demos/zipball/master
-For simpler version (works on Windows 7):
-https://github.com/robertsdionne/demos/zipball/windows7-supported
+  N - Cycle to next shape.
+  P - Cycle to previous shape.
 
-2) Unzip demos.
-
-3) Open file:///path/to/ray.html in your browser.
+  Y - Toggle debug rendering mode in some demonstrations.
+  U - Toggle lower level-of-detail near edges of screen.
+  I - Toggle intersector mesh to demonstrate the coexistance of raytraced and
+      traditional polygon geometry in the same scene with correct depth
+      interaction.
