@@ -34,21 +34,9 @@
       varying vec3 ray;
 
       float distance(vec3 pos);
-      float cull(vec3 pos);
-
-      mat4 bias = mat4(0.5, 0.0, 0.0, 0.0,
-                       0.0, 0.5, 0.0, 0.0,
-                       0.0, 0.0, 0.5, 0.0,
-                       0.5, 0.5, 0.5, 1.0);
-
-      // Depth unpacking function and constants adapted from
-      // SpiderGL Example 6: Shadow Mapping:
-      // http://spidergl.org/example.php?id=6
-      float unpackDepth(vec4 rgbaDepth) {
-        vec4 bitShift = vec4(1./(256.*256.*256.),
-            1./(256.*256.), 1./256., 1.);
-        return dot(rgbaDepth, bitShift);
-      }
+      vec3 gradient(vec3 pos);
+      vec3 exactGradient(vec3 pos);
+      vec3 approximateGradient(vec3 pos);
 
       float r = 0.22;
       float R = 0.5;
@@ -80,7 +68,7 @@
             break;
           }
           p = pos-translate;
-          float dist = cull(p);
+          float dist = distance(p);
           if (dist < max(eps * abs(pos.z), eps)) {
             hit = true;
             break;
@@ -88,17 +76,11 @@
           count += 0.02;
           pos += 0.7 * dir * dist;
         }
-        float red = 0.;//1.0-clamp(length(pos) / 100.0, 0.0, 1.0);
+        float red = 0.;
         float blue = count;
         float u = max(eps * abs(pos.z), eps);
         if (hit) {
-          vec3 dx = vec3(u, 0.0,  0.0);
-          vec3 dy = vec3(0.0,  u, 0.0);
-          vec3 dz = vec3(0.0,  0.0,  u);
-          vec3 normal = normalize(vec3(
-            cull(p+dx) - cull(p-dx),
-            cull(p+dy) - cull(p-dy),
-            cull(p+dz) - cull(p-dz)));
+          vec3 normal = normalize(gradient(p));
           vec3 lightdir = pos - vec3(0, 0, -2);
           vec3 nlightdir = normalize(lightdir);
           vec3 lightdir2 = pos - vec3(4, 0, -5);
@@ -116,36 +98,59 @@
               reflect(nlightdir2, normal)), 0.0, 1.0), 80.0);
           float spec3 =pow(clamp(-dot(normalize(dir),
               reflect(nlightdir3, normal)), 0.0, 1.0), 80.0);
-          if (debug) {
-            gl_FragColor = vec4(0., count, 0., 1.);
-          } else {
+//          gl_FragColor = vec4(normal-normalize(exactGradient(p)), 1);
+
             gl_FragColor = vec4(intensity +intensity3+ spec+spec3,
                 intensity +spec, intensity +intensity2+ spec+spec2, 1.0);
-          }
         } else {
-          if (debug) {
-            gl_FragColor = vec4(0., count, 0., 1.);
-          } else {
-            discard;
-         }
+          discard;
         }
+      }
+
+      vec4 multiply(vec4 a, vec4 b) {
+        return vec4(
+            a.w * b.x + a.x * b.w,
+            a.w * b.y + a.y * b.w,
+            a.w * b.z + a.z * b.w,
+            a.w * b.w);
+      }
+
+      vec4 squareRoot(vec4 a) {
+        float s = sqrt(a.w);
+        return vec4(a.x/s/2., a.y/s/2., a.z/s/2., s);
       }
 
       float sphere(vec3 pos);
       float torus(vec3 pos);
 
-      float cull(vec3 pos) {
-        float l = dot(pos, vec3(1.,0.,0.))-1.;
-        float r = dot(pos, vec3(-1.,0.,0.))-1.;
-        float t = dot(pos, vec3(0.,1.,0.))-1.;
-        float b = dot(pos, vec3(0.,-1.,0.))-1.;
-        float n = dot(pos, vec3(0.,0.,1.))-1.;
-        float f = dot(pos, vec3(0.,0.,-1.))-1.;
-        return max(max(max(max(l,r), max(t,b)), max(n, f)), distance(pos));
-      }
-      
+      vec3 sphereGradient(vec3 pos);
+      vec3 torusGradient(vec3 pos);
+
       float distance(vec3 pos) {
-        return sphere(pos);
+        return torus(pos);
+      }
+
+      vec3 gradient(vec3 pos) {
+        if (debug) {
+          return approximateGradient(pos);
+        } else {
+          return exactGradient(pos);
+        }
+      }
+
+      vec3 approximateGradient(vec3 pos) {
+        float u = 0.001;
+        vec3 dx = vec3(u, 0.0, 0.0);
+        vec3 dy = vec3(0.0, u, 0.0);
+        vec3 dz = vec3(0.0, 0.0, u);
+        return vec3(
+            distance(pos+dx) - distance(pos-dx),
+            distance(pos+dy) - distance(pos-dy),
+            distance(pos+dz) - distance(pos-dz));
+      }
+
+      vec3 exactGradient(vec3 pos) {
+        return torusGradient(pos);
       }
 
       float sphere(vec3 pos) {
@@ -154,6 +159,22 @@
 
       float torus(vec3 pos) {
         return length(vec2(length(pos.xz)-R,pos.y))-r;
+      }
+
+      vec3 sphereGradient(vec3 pos) {
+        vec4 x = vec4(1, 0, 0, pos.x);
+        vec4 y = vec4(0, 1, 0, pos.y);
+        vec4 z = vec4(0, 0, 1, pos.z);
+        return (squareRoot(multiply(x,x) + multiply(y,y) + multiply(z,z))
+            - vec4(0, 0, 0, sqrt(0.5))).xyz;
+      }
+
+      vec3 torusGradient(vec3 pos) {
+        vec4 x = vec4(1, 0, 0, pos.x);
+        vec4 y = vec4(0, 1, 0, pos.y);
+        vec4 z = vec4(0, 0, 1, pos.z);
+        vec4 d = squareRoot(multiply(x,x)+multiply(z,z))-vec4(0,0,0,R);
+        return (squareRoot(multiply(d,d)+multiply(y,y))-vec4(0,0,0,r)).xyz;
       }
     </script>
   </head>
