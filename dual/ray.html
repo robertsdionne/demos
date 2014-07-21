@@ -103,7 +103,11 @@
             gl_FragColor = vec4(intensity +intensity3+ spec+spec3,
                 intensity +spec, intensity +intensity2+ spec+spec2, 1.0);
         } else {
-          discard;
+          if (debug) {
+            gl_FragColor = vec4(vec3(count),1.);
+          } else {
+            discard;
+          }
         }
       }
 
@@ -120,26 +124,28 @@
         return vec4(a.x/s/2., a.y/s/2., a.z/s/2., s);
       }
 
+      float box(vec3 pos);
       float sphere(vec3 pos);
       float torus(vec3 pos);
 
+      vec3 boxGradient(vec3 pos);
       vec3 sphereGradient(vec3 pos);
       vec3 torusGradient(vec3 pos);
 
       float distance(vec3 pos) {
-        return torus(pos);
+        return box(pos);
       }
 
       vec3 gradient(vec3 pos) {
-        if (debug) {
+//      if (debug) {
           return approximateGradient(pos);
-        } else {
-          return exactGradient(pos);
-        }
+//      } else {
+//        return exactGradient(pos);
+//      }
       }
 
       vec3 approximateGradient(vec3 pos) {
-        float u = 0.001;
+        float u = 0.1;
         vec3 dx = vec3(u, 0.0, 0.0);
         vec3 dy = vec3(0.0, u, 0.0);
         vec3 dz = vec3(0.0, 0.0, u);
@@ -150,7 +156,18 @@
       }
 
       vec3 exactGradient(vec3 pos) {
-        return torusGradient(pos);
+        return boxGradient(pos);
+      }
+
+      float box(vec3 pos) {
+//      float right = dot(pos,vec3(1.,0.,0.))-0.25;
+//      float left = dot(pos, vec3(-1.,0.,0.))-0.25;
+//      float top = dot(pos,vec3(0.,1.,0.))-0.25;
+//      float bottom = dot(pos, vec3(0.,-1.,0.))-0.25;
+//      float front = dot(pos,vec3(0.,0.,1.))-0.25;
+//      float back = dot(pos, vec3(0.,0.,-1.))-0.25;
+//      return max(max(max(right,left),max(top,bottom)),max(front,back))-0.1;
+        return length(max(abs(pos)-vec3(0.5),0.))-.5;
       }
 
       float sphere(vec3 pos) {
@@ -159,6 +176,24 @@
 
       float torus(vec3 pos) {
         return length(vec2(length(pos.xz)-R,pos.y))-r;
+      }
+
+      vec4 maximum(vec4 a, vec4 b) {
+        return mix(a, b, vec4(a.w<b.w));
+      }
+
+      vec3 boxGradient(vec3 pos) {
+        vec4 x = vec4(1, 0, 0, pos.x);
+        vec4 y = vec4(0, 1, 0, pos.y);
+        vec4 z = vec4(0, 0, 1, pos.z);
+        vec4 left = x-vec4(0,0,0,.25);
+        vec4 right = -x-vec4(0,0,0,.25);
+        vec4 top = y-vec4(0,0,0,.25);
+        vec4 bottom = -y-vec4(0,0,0,.25);
+        vec4 front = z-vec4(0,0,0,.25);
+        vec4 back = -z-vec4(0,0,0,.25);
+        return (maximum(maximum(maximum(right,left),maximum(top,bottom)),
+            maximum(front,back))-vec4(0,0,0,0.1)).xyz;
       }
 
       vec3 sphereGradient(vec3 pos) {
