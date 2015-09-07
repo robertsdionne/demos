@@ -10,7 +10,7 @@
     <script src="base.js" type="application/javascript"></script>
     <script id="v0" type="x-shader/x-vertex">
       precision mediump float;
-      
+
       uniform vec3 translate;
       attribute vec3 position;
       varying vec3 ray;
@@ -32,9 +32,9 @@
     </script>
     <script id="f0" type="x-shader/x-fragment">
       precision mediump float;
-      
+
 //
-// Description : Array and textureless GLSL 2D/3D/4D simplex 
+// Description : Array and textureless GLSL 2D/3D/4D simplex
 //               noise functions.
 //      Author : Ian McEwan, Ashima Arts.
 //  Maintainer : ijm
@@ -47,14 +47,14 @@ vec4 permute(vec4 x)
 {
   return mod(((x*34.0)+1.0)*x, 289.0);
 }
-  
+
 vec4 taylorInvSqrt(vec4 r)
 {
   return 1.79284291400159 - 0.85373472095314 * r;
 }
 
 float snoise(vec3 v)
-  { 
+  {
   const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
   const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
 
@@ -77,10 +77,10 @@ float snoise(vec3 v)
   vec3 x3 = x0 - D.yyy;      // -1.0+3.0*C.x = -0.5 = -D.y
 
 // Permutations
-  i = mod(i, 289.0 ); 
-  vec4 p = permute( permute( permute( 
+  i = mod(i, 289.0 );
+  vec4 p = permute( permute( permute(
              i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
-           + i.y + vec4(0.0, i1.y, i2.y, 1.0 )) 
+           + i.y + vec4(0.0, i1.y, i2.y, 1.0 ))
            + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
 
 // Gradients: 7x7 points over a square, mapped onto an octahedron.
@@ -124,7 +124,7 @@ float snoise(vec3 v)
 // Mix final noise value
   vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
   m = m * m;
-  return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), 
+  return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1),
                                 dot(p2,x2), dot(p3,x3) ) );
   }
 
@@ -274,7 +274,7 @@ float snoise(vec3 v)
       float both(vec3 pos) {
         return min(sphere(pos-vec3(1.1, 0.0, 0.0)), cube(pos+vec3(1.1, 0.0, 0.0)));
       }
-      
+
       float distance(vec3 pos, vec3 dir) {
 //      vec3 q = pos;
 //      pos.xz = mod(pos.xz, vec2(2.,5.))-vec2(1.,2.5);
@@ -460,7 +460,7 @@ float snoise(vec3 v)
     </script>
     <script id="f1" type="x-shader/x-vertex">
       precision mediump float;
-      
+
       varying vec4 vPosition;
       varying vec4 vNormal;
 
@@ -490,7 +490,7 @@ float snoise(vec3 v)
     </script>
     <script id="f2" type="x-shader/x-fragment">
       precision mediump float;
-      
+
       // Depth packing function and constants adapted from
       // SpiderGL Example 6: Shadow Mapping:
       // http://spidergl.org/example.php?id=6
@@ -505,6 +505,15 @@ float snoise(vec3 v)
       void main() {
         gl_FragColor = packDepth(gl_FragCoord.z);
       }
+    </script>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-24999963-1', 'auto');
+      ga('send', 'pageview');
     </script>
   </head>
   <body onload="ray.load();">
