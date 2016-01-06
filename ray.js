@@ -8,14 +8,10 @@ ray.load = function() {
   keys.install();
   canvas.width = 640;
   canvas.height = 640;
-  var gl = canvas.getContext('experimental-webgl');
+  var gl = canvas.getContext('webgl');
   var p = gl.createProgram();
-  var q = gl.createProgram();
-  var q2 = gl.createProgram();
   var b = gl.createBuffer();
-  var t = gl.createTexture();
-  var f = gl.createFramebuffer();
-  onCreate(gl, p, q, q2, t, f, b);
+  onCreate(gl, p, b);
   var width, height;
   window.setInterval(function() {
     if (width !== canvas.width || height !== canvas.height) {
@@ -24,7 +20,7 @@ ray.load = function() {
       onChange(gl, width, height);
     }
     update();
-    onDraw(gl, p, q, q2, t, f, b);
+    onDraw(gl, p, b);
   }, 1000/60);
 };
 
@@ -108,11 +104,10 @@ var compileProgram = function(gl, p, vid, fid) {
   }
 };
 
-var onCreate = function(gl, p, q, q2, t, f, b) {
+var onCreate = function(gl, p, b) {
   gl.enable(gl.CULL_FACE);
+  gl.enable(gl.DEPTH_TEST);
   compileProgram(gl, p, 'v0', 'f0');
-  compileProgram(gl, q, 'v1', 'f1');
-  compileProgram(gl, q2, 'v1', 'f2');
 
   p.position = gl.getAttribLocation(p, 'position');
 
@@ -120,45 +115,6 @@ var onCreate = function(gl, p, q, q2, t, f, b) {
   p.debug = gl.getUniformLocation(p, 'debug');
   p.eyeTrackingLod = gl.getUniformLocation(p, 'eyeTrackingLod');
   p.distanceFn = gl.getUniformLocation(p, 'distanceFn');
-
-  q.uProject = gl.getUniformLocation(q, 'uProject');
-  q.uTransform = gl.getUniformLocation(q, 'uTransform');
-
-  q.aPosition = gl.getAttribLocation(q, 'aPosition');
-  q.aNormal = gl.getAttribLocation(q, 'aNormal');
-
-  q2.uProject = gl.getUniformLocation(q2, 'uProject');
-  q2.uTransform = gl.getUniformLocation(q2, 'uTransform');
-
-  q2.aPosition = gl.getAttribLocation(q2, 'aPosition');
-  q2.aNormal = gl.getAttribLocation(q2, 'aNormal');
-
-  gl.bindTexture(gl.TEXTURE_2D, t);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 640, 640, 0, gl.RGBA,
-      gl.UNSIGNED_BYTE, null);
-  gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  var error = gl.getError();
-  if (error != gl.NO_ERROR) {
-    console.log(error);
-  }
-
-  var r = gl.createRenderbuffer();
-  gl.bindRenderbuffer(gl.RENDERBUFFER, r);
-  gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 640, 640);
-
-  gl.bindFramebuffer(gl.FRAMEBUFFER, f);
-  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D,
-      t, 0);
-  gl.framebufferRenderbuffer(
-      gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, r);
-
-  var status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-  if (status != gl.FRAMEBUFFER_COMPLETE) {
-    console.log(status);
-  }
 
   var data = [
     1.0,  1.0, -1.0,
@@ -290,44 +246,10 @@ var getTransform2 = function(x, y, z) {
 };
 
 
-var onDraw = function(gl, p, q, q2, t, f, b) {
-  gl.bindFramebuffer(gl.FRAMEBUFFER, f);
-  gl.clearColor(1.0, 1.0, 1.0, 1.0);
-  gl.cullFace(gl.FRONT);
-  gl.enable(gl.DEPTH_TEST);
-  gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-
-  if (intersector) {
-    gl.useProgram(q2);
-    gl.uniformMatrix4fv(q2.uProject, false, getPerspectiveProjectionMatrix());
-    gl.uniformMatrix4fv(q2.uTransform, false, getTransform());
-    gl.bindBuffer(gl.ARRAY_BUFFER, b);
-    gl.vertexAttribPointer(q2.aPosition, 3, gl.FLOAT, false, 24, 0);
-    gl.vertexAttribPointer(q2.aNormal, 3, gl.FLOAT, false, 24, 12);
-    gl.enableVertexAttribArray(q2.aPosition);
-    gl.enableVertexAttribArray(q2.aNormal);
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
-    gl.disableVertexAttribArray(q2.aPosition);
-    gl.disableVertexAttribArray(q2.aNormal);
-  }
-
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+var onDraw = function(gl, p, b) {
   gl.clearColor(0.2, 0.2, 0.2, 1.0);
   gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-
-  if (intersector) {
-    gl.useProgram(q);
-    gl.uniformMatrix4fv(q.uProject, false, getPerspectiveProjectionMatrix());
-    gl.uniformMatrix4fv(q.uTransform, false, getTransform());
-    gl.bindBuffer(gl.ARRAY_BUFFER, b);
-    gl.vertexAttribPointer(q.aPosition, 3, gl.FLOAT, false, 24, 0);
-    gl.vertexAttribPointer(q.aNormal, 3, gl.FLOAT, false, 24, 12);
-    gl.enableVertexAttribArray(q.aPosition);
-    gl.enableVertexAttribArray(q.aNormal);
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
-    gl.disableVertexAttribArray(q.aPosition);
-    gl.disableVertexAttribArray(q.aNormal);
-  }
+  gl.enable(gl.DEPTH_TEST);
 
   gl.cullFace(gl.BACK);
   gl.useProgram(p);
