@@ -117,15 +117,15 @@ var onCreate = function(gl, p, b) {
   p.distanceFn = gl.getUniformLocation(p, 'distanceFn');
 
   var data = [
-    1.0,  1.0, -1.0,
+    1.0,  -1.0, -1.0,
     0.0,  0.0,  1.0,
-    1.0, -1.0, -1.0,
-    0.0,  0.0,  1.0,
-   -1.0, -1.0, -1.0,
-    0.0,  0.0,  1.0,
-    1.0,  1.0, -1.0,
+    1.0, 1.0, -1.0,
     0.0,  0.0,  1.0,
    -1.0, -1.0, -1.0,
+    0.0,  0.0,  1.0,
+    -1.0,  -1.0, -1.0,
+    0.0,  0.0,  1.0,
+   1.0, 1.0, -1.0,
     0.0,  0.0,  1.0,
    -1.0,  1.0, -1.0,
     0.0,  0.0,  1.0,
@@ -260,7 +260,7 @@ var onDraw = function(gl, p, b) {
   gl.bindBuffer(gl.ARRAY_BUFFER, b);
   gl.vertexAttribPointer(p.position, 3, gl.FLOAT, false, 24, 0);
   gl.enableVertexAttribArray(p.position);
-  gl.drawArrays(gl.TRIANGLES, 0, 36);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
   gl.disableVertexAttribArray(p.position);
 
   gl.flush();

@@ -19,10 +19,9 @@
         p[2][3] = -1.0;
         p[3][2] = -200.0 / 999.9;
         p[3][3] = 0.0;
-        vec4 d = t * vec4(position, 1);
-        d.z = min(-0.11, d.z);
+        vec4 d = vec4(position, 1);
         ray = d.xyz;
-        gl_Position = p * d;
+        gl_Position = d;
       }
     </script>
     <script id="f0" type="x-shader/x-fragment">
@@ -59,7 +58,7 @@
       float r = 0.22;
       float R = 0.5;
       void main() {
-        vec3 pos = vec3(ray);
+        vec3 pos = vec3(0);
         vec3 dir = normalize(ray);
         float eps;
         if (eyeTrackingLod) {
@@ -80,13 +79,7 @@
         vec4 rgbaDepth;
         float depth;
         for(int i = 0; i < 100; ++i) {
-          if (abs(pos-translate).x > 1.1) {
-            break;
-          }
-          if (abs(pos-translate).y > 1.1) {
-            break;
-          }
-          if (abs(pos-translate).z > 1.1) {
+          if (length(pos) > 100.0) {
             break;
           }
           texCoord = bias * proj * vec4(pos, 1.);
