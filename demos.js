@@ -51,25 +51,8 @@ demos.Application = class {
 
     this.gl.viewport(0, 0, demos.WIDTH, demos.HEIGHT);
 
-    var vertexShader = this.gl.createShader(this.gl.VERTEX_SHADER);
-    this.gl.shaderSource(vertexShader, this.document.getElementById(demos.VERTEX_SHADER_ID).text);
-    this.gl.compileShader(vertexShader);
-    if (!this.gl.getShaderParameter(vertexShader, this.gl.COMPILE_STATUS)) {
-      throw new Error(this.gl.getShaderInfoLog(vertexShader));
-    }
-    this.gl.attachShader(this.program, vertexShader);
-    this.gl.deleteShader(vertexShader);
-    vertexShader = null;
-
-    var fragmentShader = this.gl.createShader(this.gl.FRAGMENT_SHADER);
-    this.gl.shaderSource(fragmentShader, this.document.getElementById(demos.FRAGMENT_SHADER_ID).text);
-    this.gl.compileShader(fragmentShader);
-    if (!this.gl.getShaderParameter(fragmentShader, this.gl.COMPILE_STATUS)) {
-      throw new Error(this.gl.getShaderInfoLog(fragmentShader));
-    }
-    this.gl.attachShader(this.program, fragmentShader);
-    this.gl.deleteShader(fragmentShader);
-    fragmentShader = null;
+    this.compileAndAttachShader(this.program, demos.VERTEX_SHADER_ID, this.gl.VERTEX_SHADER);
+    this.compileAndAttachShader(this.program, demos.FRAGMENT_SHADER_ID, this.gl.FRAGMENT_SHADER);
 
     this.gl.linkProgram(this.program);
     if (!this.gl.getProgramParameter(this.program, this.gl.LINK_STATUS)) {
@@ -88,6 +71,17 @@ demos.Application = class {
     this.gl.bufferData(this.gl.ARRAY_BUFFER, data, this.gl.STATIC_DRAW);
 
     this.render();
+  }
+
+  compileAndAttachShader(program, shaderId, shaderType) {
+    var shader = this.gl.createShader(shaderType);
+    this.gl.shaderSource(shader, this.document.getElementById(shaderId).text);
+    this.gl.compileShader(shader);
+    if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
+      throw new Error(this.gl.getShaderInfoLog(shader));
+    }
+    this.gl.attachShader(program, shader);
+    this.gl.deleteShader(shader);
   }
 
   render() {
