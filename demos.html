@@ -28,6 +28,8 @@
     <script id="fragment-shader-0" type="x-shader/x-fragment">
       precision mediump float;
 
+      uniform highp vec3 translate;
+
       varying highp vec3 unnormalized_ray;
 
       float DistanceTo(vec3 position);
@@ -38,7 +40,7 @@
 
       void main() {
         highp vec3 ray = normalize(unnormalized_ray);
-        highp vec3 position = vec3(0.) + vec3(0., 0., 10.);
+        highp vec3 position = vec3(0.) + vec3(0., 0., 10.) + translate;
 
         lowp float hit = 0.;
         for (int i = 0; i < 128; ++i) {
