@@ -92,8 +92,8 @@ demos.Application = class {
 
     this.gl.useProgram(this.program);
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
-    var t = this.window.performance.now() / 1000.0;
-    this.gl.uniform3f(this.program.translate, Math.cos(t), Math.sin(t), Math.tan(t));
+    var t = this.window.performance.now() / 1000.0 / 10.0;
+    this.gl.uniform3f(this.program.translate, 8 * Math.cos(10 * t), 2 * Math.sin(t), Math.tan(t));
     this.gl.vertexAttribPointer(this.program.position, 3, this.gl.FLOAT, false, 12, 0);
     this.gl.enableVertexAttribArray(this.program.position);
     this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
