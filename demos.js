@@ -12,7 +12,7 @@ demos.CANVAS_ID = 'c';
 
 
 demos.FRAGMENT_SHADER0_ID = 'fragment-shader-0.glsl';
-demos.FRAGMENT_SHADER1_ID = 'fragment-shader-1.glsl';
+demos.FRAGMENT_SHADER1_ID = 'fragment-shader-2.glsl';
 
 
 demos.HEIGHT = 640;

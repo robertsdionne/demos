@@ -10,7 +10,10 @@ demos.Application = class {
     this.gl = gl;
     this.program0 = this.gl.createProgram();
     this.program1 = this.gl.createProgram();
+    this.program2 = this.gl.createProgram();
     this.buffer = this.gl.createBuffer();
+    this.framebuffer = this.gl.createFramebuffer();
+    this.texture = this.gl.createTexture();
   }
 
   run() {
@@ -33,8 +36,22 @@ demos.Application = class {
       throw new Error(this.gl.getProgramInfoLog(this.program1));
     }
 
+    this.compileAndAttachShader(this.program2, demos.VERTEX_SHADER_ID, this.gl.VERTEX_SHADER);
+    this.compileAndAttachShader(this.program2, 'fragment-shader-1.glsl', this.gl.FRAGMENT_SHADER);
+
+    this.gl.linkProgram(this.program2);
+    if (!this.gl.getProgramParameter(this.program2, this.gl.LINK_STATUS)) {
+      throw new Error(this.gl.getProgramInfoLog(this.program2));
+    }
+
     this.program0.translate = this.gl.getUniformLocation(this.program0, 'translate');
     this.program0.position = this.gl.getAttribLocation(this.program0, 'position');
+
+    this.program1.sampler = this.gl.getUniformLocation(this.program1, 'sampler');
+    this.program1.position = this.gl.getAttribLocation(this.program1, 'position');
+
+    this.program2.translate = this.gl.getUniformLocation(this.program2, 'translate');
+    this.program2.position = this.gl.getAttribLocation(this.program2, 'position');
 
     var data = new Float32Array([
           -1, -1, -1,
@@ -44,6 +61,26 @@ demos.Application = class {
         ]);
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
     this.gl.bufferData(this.gl.ARRAY_BUFFER, data, this.gl.STATIC_DRAW);
+
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
+    this.gl.texImage2D(this.gl.TEXTURE_2D,
+        0, this.gl.RGBA, demos.WIDTH / 2, demos.HEIGHT, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
+    this.gl.texParameterf(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+    this.gl.texParameterf(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+    var error = this.gl.getError();
+    if (this.gl.NO_ERROR != error) {
+      throw new Error(error);
+    }
+
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffer);
+    this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D, this.texture, 0);
+
+    var status = this.gl.checkFramebufferStatus(this.gl.FRAMEBUFFER);
+    if (this.gl.FRAMEBUFFER_COMPLETE != status) {
+      throw new Error(status);
+    }
 
     this.render();
   }
@@ -67,27 +104,40 @@ demos.Application = class {
   }
 
   render() {
-    this.gl.viewport(0, 0, demos.WIDTH / 2, demos.HEIGHT);
-
     this.gl.clearColor(0, 0, 0, 1);
     this.gl.enable(this.gl.DEPTH_TEST);
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+    this.gl.viewport(0, 0, demos.WIDTH / 2, demos.HEIGHT);
 
     var t = this.window.performance.now() / 1000.0 / 10.0;
 
-    this.gl.useProgram(this.program0);
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
-    this.gl.uniform3f(this.program0.translate, 8 * Math.cos(10 * t), 2 * Math.sin(t), Math.tan(t));
-    this.gl.vertexAttribPointer(this.program0.position, 3, this.gl.FLOAT, false, 12, 0);
-    this.gl.enableVertexAttribArray(this.program0.position);
-    this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
-    this.gl.disableVertexAttribArray(this.program0.position);
+    _.each([{
+          framebuffer: null,
+          program: this.program0,
+        }//, {
+          // framebuffer: this.framebuffer,
+          // program: this.program0,
+        // }
+      ], ({framebuffer, program}) => {
+          this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, framebuffer);
+          this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+
+          this.gl.useProgram(program);
+          this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
+          this.gl.uniform3f(program.translate, 8 * Math.cos(10 * t), 4 * Math.sin(t), Math.tan(t));
+          this.gl.vertexAttribPointer(program.position, 3, this.gl.FLOAT, false, 12, 0);
+          this.gl.enableVertexAttribArray(program.position);
+          this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
+          this.gl.disableVertexAttribArray(program.position);
+        });
 
     this.gl.viewport(demos.WIDTH / 2, 0, demos.WIDTH / 2, demos.HEIGHT);
 
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
     this.gl.useProgram(this.program1);
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
-    this.gl.uniform3f(this.program1.translate, 8 * Math.cos(10 * t), 2 * Math.sin(t), Math.tan(t));
+    this.gl.activeTexture(this.gl.TEXTURE0);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+    this.gl.uniform1i(this.program1.sampler, 0);
     this.gl.vertexAttribPointer(this.program1.position, 3, this.gl.FLOAT, false, 12, 0);
     this.gl.enableVertexAttribArray(this.program1.position);
     this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
