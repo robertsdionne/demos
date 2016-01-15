@@ -15,7 +15,7 @@ demos.FRAGMENT_SHADER0_ID = 'fragment-shader-0.glsl';
 demos.FRAGMENT_SHADER1_ID = 'fragment-shader-2.glsl';
 
 
-demos.HEIGHT = 640;
+demos.HEIGHT = 224;
 demos.WIDTH = 2 * demos.HEIGHT;
 
 

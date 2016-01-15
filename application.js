@@ -14,6 +14,8 @@ demos.Application = class {
     this.buffer = this.gl.createBuffer();
     this.framebuffer = this.gl.createFramebuffer();
     this.texture = this.gl.createTexture();
+    this.hidden = [Math.random() * 2. - 1., Math.random() * 2. - 1., Math.random() * 2. - 1.];
+    this.frame = 0;
   }
 
   run() {
@@ -45,12 +47,14 @@ demos.Application = class {
     }
 
     this.program0.translate = this.gl.getUniformLocation(this.program0, 'translate');
+    this.program0.hidden = this.gl.getUniformLocation(this.program0, 'hidden');
     this.program0.position = this.gl.getAttribLocation(this.program0, 'position');
 
     this.program1.sampler = this.gl.getUniformLocation(this.program1, 'sampler');
     this.program1.position = this.gl.getAttribLocation(this.program1, 'position');
 
     this.program2.translate = this.gl.getUniformLocation(this.program2, 'translate');
+    this.program2.hidden = this.gl.getUniformLocation(this.program2, 'hidden');
     this.program2.position = this.gl.getAttribLocation(this.program2, 'position');
 
     var data = new Float32Array([
@@ -109,21 +113,24 @@ demos.Application = class {
     this.gl.viewport(0, 0, demos.WIDTH / 2, demos.HEIGHT);
 
     var t = this.window.performance.now() / 1000.0 / 10.0;
+    if (0 == ++this.frame % 10) {
+      this.hidden = [Math.random() * 2. - 1., Math.random() * 2. - 1., Math.random() * 2. - 1.];
+    }
 
     _.each([{
           framebuffer: null,
+          program: this.program2,
+        }, {
+          framebuffer: this.framebuffer,
           program: this.program0,
-        }//, {
-          // framebuffer: this.framebuffer,
-          // program: this.program0,
-        // }
-      ], ({framebuffer, program}) => {
+        }], ({framebuffer, program}) => {
           this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, framebuffer);
           this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
           this.gl.useProgram(program);
           this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
-          this.gl.uniform3f(program.translate, 8 * Math.cos(10 * t), 4 * Math.sin(t), Math.tan(t));
+          this.gl.uniform3f(program.translate, 0 * Math.cos(t), 8 * Math.sin(t), Math.tan(t));
+          this.gl.uniform3f(program.hidden, this.hidden[0], this.hidden[1], this.hidden[2]);
           this.gl.vertexAttribPointer(program.position, 3, this.gl.FLOAT, false, 12, 0);
           this.gl.enableVertexAttribArray(program.position);
           this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
